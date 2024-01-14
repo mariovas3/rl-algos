@@ -13,19 +13,19 @@
 ### Objective:
 Find $\pi^*$ such that:
 
-$
+$$
 \begin{equation}
     \pi^*=\arg \max_{\pi} \sum_{t=1}^T \mathbb{E}_{A_t\sim \pi}\{\mathbb{E}[R_t \mid A_t=a_t]\}.
 \end{equation}
-$
+$$
 
 If I knew $\mathbb{E}[R_t|A_t=a_t]$ for all $a_t\in \mathcal{A}$ and for all $t$, I can just pick the policy $\pi^*$ that implements a greedy operation:
 
-$
+$$
 \begin{equation}
     a_t^* = \arg \max_a \mathbb{E}[R_t|A_t=a].
 \end{equation}
-$
+$$
 
 Since the expectations are unknown, we have to estimate them and potentially use extra heuristics to pick an action.
 
