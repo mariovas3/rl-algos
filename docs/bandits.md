@@ -15,7 +15,7 @@ Find $\pi^*$ such that:
 
 $$
 \begin{equation}
-    \pi^*=\arg \max_{\pi} \sum_{t=1}^T \mathbb{E}_{A_t\sim \pi}\{\mathbb{E}[R_t \mid A_t=a_t]\}.
+    \pi^*=\arg \max_{\pi} \sum_{t=1}^T \mathbb{E}_{A_t\sim \pi} \left[\mathbb{E}[R_t \mid A_t=a_t]\right].
 \end{equation}
 $$
 
