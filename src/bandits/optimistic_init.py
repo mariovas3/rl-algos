@@ -19,12 +19,18 @@ def plot_testbed(file_name, algos, avg_rewards, prop_true_optimal, init_vals):
         axs[0].plot(
             range(avg_rewards.shape[-1]),
             avg_rewards[idx, :],
-            label=f"$\epsilon$={1-algo.probs.item():.2f}, $Q_0$={init_vals[idx]:.2f}",
+            label=(
+                f"$\epsilon$={1-algo.probs.item():.2f}, "
+                f"$Q_0$={init_vals[idx]:.2f}"
+            ),
         )
         axs[1].plot(
             range(prop_true_optimal.shape[-1]),
             prop_true_optimal[idx, :],
-            label=f"$\epsilon$={1-algo.probs.item():.2f}, $Q_0$={init_vals[idx]:.2f}",
+            label=(
+                f"$\epsilon$={1-algo.probs.item():.2f}, "
+                f"$Q_0$={init_vals[idx]:.2f}"
+            ),
         )
         axs[0].legend()
         axs[1].legend()
