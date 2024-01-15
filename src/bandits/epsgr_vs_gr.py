@@ -5,23 +5,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.distributions as dists
-from utils import EpsGreedyEnv, get_normal_bandits, run_algo
-
-
-class MetricTracker:
-    def __init__(self, algos, num_steps, true_optimal):
-        self.algos = algos
-        self.num_steps = num_steps
-        self.avg_rewards = np.zeros((len(algos), num_steps))
-        self.prop_true_optimal = np.zeros((len(algos), num_steps))
-        self.true_optimal = true_optimal
-
-    def __call__(self, rewards, msk, idx, t):
-        # get avg reward for this time step across bandits;
-        self.avg_rewards[idx, t] = rewards.mean()
-
-        # get avg time optimal was selected;
-        self.prop_true_optimal[idx, t] = (msk == self.true_optimal).mean()
+from utils import (AvgRewardAndTrueOptTracker, EpsGreedyEnv,
+                   get_normal_bandits, run_algo)
 
 
 def plot_testbed(file_name, algos, avg_rewards, prop_true_optimal):
@@ -69,7 +54,9 @@ if __name__ == "__main__":
     algos = [dists.Bernoulli(probs=p) for p in (0.9, 0.99, 1)]
 
     # init metric tracker;
-    metric_tracker = MetricTracker(algos, NUM_STEPS, true_optimal)
+    metric_tracker = AvgRewardAndTrueOptTracker(
+        algos, NUM_STEPS, true_optimal
+    )
 
     # run experiments;
     for idx, algo in enumerate(algos):

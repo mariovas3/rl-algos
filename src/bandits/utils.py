@@ -5,6 +5,22 @@ import torch
 import torch.distributions as dists
 
 
+class AvgRewardAndTrueOptTracker:
+    def __init__(self, algos, num_steps, true_optimal):
+        self.algos = algos
+        self.num_steps = num_steps
+        self.avg_rewards = np.zeros((len(algos), num_steps))
+        self.prop_true_optimal = np.zeros((len(algos), num_steps))
+        self.true_optimal = true_optimal
+
+    def __call__(self, rewards, msk, idx, t):
+        # get avg reward for this time step across bandits;
+        self.avg_rewards[idx, t] = rewards.mean()
+
+        # get avg time optimal was selected;
+        self.prop_true_optimal[idx, t] = (msk == self.true_optimal).mean()
+
+
 class MyNormal(dists.Normal):
     def __getitem__(self, idx):
         return dists.Normal(loc=self.mean[idx], scale=self.scale[idx])
