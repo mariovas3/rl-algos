@@ -5,88 +5,26 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.distributions as dists
-
-np.random.seed(0)
-torch.manual_seed(0)
-
-SAVE_PATH = Path(__file__).absolute().parent.parent.parent / "assets/imgs"
-if not SAVE_PATH.exists():
-    SAVE_PATH.mkdir(parents=True)
+from utils import EpsGreedyEnv, get_normal_bandits, run_algo
 
 
-class MyNormal(dists.Normal):
-    def __getitem__(self, idx):
-        return dists.Normal(loc=self.mean[idx], scale=self.scale[idx])
+class MetricTracker:
+    def __init__(self, algos, num_steps, true_optimal):
+        self.algos = algos
+        self.num_steps = num_steps
+        self.avg_rewards = np.zeros((len(algos), num_steps))
+        self.prop_true_optimal = np.zeros((len(algos), num_steps))
+        self.true_optimal = true_optimal
 
-
-# get 2000 bandit problems with 10 arms;
-bandits = MyNormal(
-    loc=dists.Normal(0.0, 1.0).sample(sample_shape=(2000, 10)), scale=1.0
-)
-
-# get idx of true optimal for each bandit;
-true_optimal = bandits.mean.argmax(-1).numpy()
-
-# eps = .1, .01, 0;
-algos = [dists.Bernoulli(probs=p) for p in (0.9, 0.99, 1)]
-
-# track avg reward and avg time optimal actions picked;
-avg_rewards = np.zeros((3, 1000))
-prop_true_optimal = np.zeros((3, 1000))
-temp = np.arange(2000)
-
-# start experiments;
-for idx, algo in enumerate(algos):
-    # init value estimates at 0;
-    action_values = np.zeros((2000, 10))
-    pick_count = np.zeros((2000, 10))
-    now = time.time()
-
-    for t in range(1000):
-        # see which bandits will be greedy
-        is_greedy = algo.sample(sample_shape=(2000,)).int().numpy()
-
-        # presample 2000 random action indexes;
-        randoms = np.random.randint(0, 10, size=(2000,))
-
-        # get indexes of greedy with random tie breaking;
-        greedies = (
-            dists.Categorical(
-                probs=torch.from_numpy(
-                    action_values == action_values.max(-1, keepdims=True)
-                )
-            )
-            .sample()
-            .int()
-            .numpy()
-        )
-
-        # see which actions to play;
-        msk = is_greedy * greedies + (1 - is_greedy) * randoms
-        # print(msk[:5])
-
-        # sample rewards
-        rewards = bandits[temp, msk].sample().numpy()
-        # print(msk.shape, rewards.shape, action_values.shape, pick_count.shape,
-        #   action_values[:, msk].shape, pick_count[:, msk].shape)
-
+    def __call__(self, rewards, msk, idx, t):
         # get avg reward for this time step across bandits;
-        avg_rewards[idx, t] = rewards.mean()
+        self.avg_rewards[idx, t] = rewards.mean()
 
         # get avg time optimal was selected;
-        prop_true_optimal[idx, t] = (msk == true_optimal).mean()
-
-        # update pick count;
-        pick_count[temp, msk] += 1
-
-        # update action values;
-        action_values[temp, msk] += (
-            rewards - action_values[temp, msk]
-        ) / pick_count[temp, msk]
-    print(f"run {idx} took: {time.time() - now:.2f} secs")
+        self.prop_true_optimal[idx, t] = (msk == self.true_optimal).mean()
 
 
-def plot_testbed():
+def plot_testbed(file_name, algos, avg_rewards, prop_true_optimal):
     fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(7, 10))
     axs[0].set_ylabel("avg reward")
     axs[0].set_xlabel("Steps")
@@ -94,19 +32,58 @@ def plot_testbed():
     axs[1].set_xlabel("Steps")
     for idx, algo in enumerate(algos):
         axs[0].plot(
-            range(1000),
+            range(avg_rewards.shape[-1]),
             avg_rewards[idx, :],
             label=f"$\epsilon$={1-algo.probs.item():.2f}",
         )
         axs[1].plot(
-            range(1000),
+            range(prop_true_optimal.shape[-1]),
             prop_true_optimal[idx, :],
             label=f"$\epsilon$={1-algo.probs.item():.2f}",
         )
         axs[0].legend()
         axs[1].legend()
     fig.tight_layout()
-    plt.savefig(SAVE_PATH / "ten-arm-testbed.png")
+    plt.savefig(file_name)
 
 
-plot_testbed()
+if __name__ == "__main__":
+    np.random.seed(0)
+    torch.manual_seed(0)
+
+    NUM_BANDITS, NUM_ARMS, NUM_STEPS = 2000, 10, 1000
+
+    SAVE_PATH = Path(__file__).absolute().parent.parent.parent / "assets/imgs"
+    if not SAVE_PATH.exists():
+        SAVE_PATH.mkdir(parents=True)
+
+    file_name = SAVE_PATH / "ten-arm-testbed.png"
+
+    # get 2000 bandit problems with 10 arms;
+    bandits = get_normal_bandits(NUM_BANDITS, NUM_ARMS)
+
+    # get idx of true optimal for each bandit;
+    true_optimal = bandits.mean.argmax(-1).numpy()
+
+    # eps = .1, .01, 0;
+    algos = [dists.Bernoulli(probs=p) for p in (0.9, 0.99, 1)]
+
+    # init metric tracker;
+    metric_tracker = MetricTracker(algos, NUM_STEPS, true_optimal)
+
+    # run experiments;
+    for idx, algo in enumerate(algos):
+        # init action values at zero;
+        action_values = np.zeros((NUM_BANDITS, NUM_ARMS))
+        bandit_env = EpsGreedyEnv(algo, action_values)
+        now = time.time()
+        run_algo(idx, bandits, bandit_env, NUM_STEPS, metric_tracker)
+        print(f"run {idx} took: {time.time() - now:.2f} secs")
+
+    # save plot;
+    plot_testbed(
+        file_name,
+        algos,
+        metric_tracker.avg_rewards,
+        metric_tracker.prop_true_optimal,
+    )
