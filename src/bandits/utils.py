@@ -36,11 +36,13 @@ def get_normal_bandits(num_bandits, num_arms):
 
 
 class EpsGreedyEnv:
-    def __init__(self, algo, action_values):
+    def __init__(self, algo, action_values, lr=None):
         self.action_values = action_values
-        self.pick_count = np.zeros_like(action_values)
+        self.lr = lr
+        if lr is None:
+            self.pick_count = np.zeros_like(action_values)
         self.algo = algo
-        self.num_bandits, self.num_arms = self.pick_count.shape
+        self.num_bandits, self.num_arms = self.action_values.shape
         self.temp = np.arange(len(action_values))
 
     def __call__(self, bandits) -> Tuple[np.ndarray]:
@@ -74,13 +76,19 @@ class EpsGreedyEnv:
         # sample rewards
         rewards = bandits[self.temp, msk].sample().numpy()
 
-        # update pick count;
-        self.pick_count[self.temp, msk] += 1
+        if self.lr is None:
+            # update pick count;
+            self.pick_count[self.temp, msk] += 1
 
-        # update action values;
-        self.action_values[self.temp, msk] += (
-            rewards - self.action_values[self.temp, msk]
-        ) / self.pick_count[self.temp, msk]
+            # update action values;
+            self.action_values[self.temp, msk] += (
+                rewards - self.action_values[self.temp, msk]
+            ) / self.pick_count[self.temp, msk]
+
+        else:
+            self.action_values[self.temp, msk] += (
+                rewards - self.action_values[self.temp, msk]
+            ) * self.lr
 
         return rewards, msk
 
