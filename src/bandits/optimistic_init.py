@@ -9,7 +9,13 @@ from utils import (AvgRewardAndTrueOptTracker, EpsGreedyEnv,
                    get_normal_bandits, run_algo)
 
 
-def plot_testbed(file_name, algos, avg_rewards, prop_true_optimal, init_vals):
+def plot_testbed(
+    file_name,
+    algos,
+    avg_rewards,
+    prop_true_optimal,
+    init_vals,
+):
     fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(7, 10))
     axs[0].set_ylabel("avg reward")
     axs[0].set_xlabel("Steps")
