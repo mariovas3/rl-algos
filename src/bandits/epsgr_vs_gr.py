@@ -96,12 +96,12 @@ def plot_testbed():
         axs[0].plot(
             range(1000),
             avg_rewards[idx, :],
-            label=f"$\epsilon$={algo.probs.item():.2f}",
+            label=f"$\epsilon$={1-algo.probs.item():.2f}",
         )
         axs[1].plot(
             range(1000),
             prop_true_optimal[idx, :],
-            label=f"$\epsilon$={algo.probs.item():.2f}",
+            label=f"$\epsilon$={1-algo.probs.item():.2f}",
         )
         axs[0].legend()
         axs[1].legend()
