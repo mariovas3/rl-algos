@@ -108,5 +108,10 @@ so no generality is lost.
 
 I reproduced the plot from the Sutton and Barto book and also added the curves for UCB with $c=\sqrt{2}$ because I was curious how this would perform, given the theoretical results. It seems UCB with $c=\sqrt{2}$ indeed performs best on the 10 arm test bed as shown in the plot below.
 
+Caveats:
+* UCB is not great for non-stationary problems since after a lot of time, the algorithm would have settled on what actions are good and will not be influenced a lot by the uncertainty term $U_t$. This 
+makes the decision making dominated by being greedy on the action-value estimates $Q_t(a)$. This behaviour resembles a lot the greedy algorithm behaviour after initial exploration. On the other hand, the epsilon greedy might adapt faster due to its foceful exploration with constant probability epsilon.
+* Implementing UCB for large state-spaces is also tough, how to you count the actions with function approximation?!
+
 
 <img src="../assets/imgs/ucb-vs-epsgr.png"/>
