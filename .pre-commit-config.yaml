@@ -4,7 +4,7 @@ repos:
     rev: 23.11.0
     hooks:
     -   id: black
-        args: ["-l", "78"]
+        args: ["-l", "79", "-v", "-t", "py311"]
 -   repo: https://github.com/PyCQA/isort
     rev: 5.13.2
     hooks:
