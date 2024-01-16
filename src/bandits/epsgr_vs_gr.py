@@ -9,22 +9,22 @@ from utils import (AvgRewardAndTrueOptTracker, EpsGreedyEnv,
                    get_normal_bandits, run_algo)
 
 
-def plot_testbed(file_name, algos, avg_rewards, prop_true_optimal):
+def plot_testbed(file_name, labels, avg_rewards, prop_true_optimal):
     fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(7, 10))
     axs[0].set_ylabel("avg reward")
     axs[0].set_xlabel("Steps")
     axs[1].set_ylabel("prop optimal picked")
     axs[1].set_xlabel("Steps")
-    for idx, algo in enumerate(algos):
+    for idx, label in enumerate(labels):
         axs[0].plot(
             range(avg_rewards.shape[-1]),
             avg_rewards[idx, :],
-            label=f"$\epsilon$={1-algo.probs.item():.2f}",
+            label=label,
         )
         axs[1].plot(
             range(prop_true_optimal.shape[-1]),
             prop_true_optimal[idx, :],
-            label=f"$\epsilon$={1-algo.probs.item():.2f}",
+            label=label,
         )
         axs[0].legend()
         axs[1].legend()
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 
     # init metric tracker;
     metric_tracker = AvgRewardAndTrueOptTracker(
-        algos, NUM_STEPS, true_optimal
+        len(algos), NUM_STEPS, true_optimal
     )
 
     # run experiments;
@@ -70,7 +70,7 @@ if __name__ == "__main__":
     # save plot;
     plot_testbed(
         file_name,
-        algos,
+        (f"$\epsilon$={1-algo.probs.item():.2f}" for algo in algos),
         metric_tracker.avg_rewards,
         metric_tracker.prop_true_optimal,
     )
