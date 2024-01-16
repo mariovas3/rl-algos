@@ -1,3 +1,4 @@
+from math import log
 from typing import Tuple
 
 import numpy as np
@@ -6,11 +7,10 @@ import torch.distributions as dists
 
 
 class AvgRewardAndTrueOptTracker:
-    def __init__(self, algos, num_steps, true_optimal):
-        self.algos = algos
+    def __init__(self, num_algos, num_steps, true_optimal):
         self.num_steps = num_steps
-        self.avg_rewards = np.zeros((len(algos), num_steps))
-        self.prop_true_optimal = np.zeros((len(algos), num_steps))
+        self.avg_rewards = np.zeros((num_algos, num_steps))
+        self.prop_true_optimal = np.zeros((num_algos, num_steps))
         self.true_optimal = true_optimal
 
     def __call__(self, rewards, msk, idx, t):
@@ -35,15 +35,49 @@ def get_normal_bandits(num_bandits, num_arms):
     )
 
 
-class EpsGreedyEnv:
-    def __init__(self, algo, action_values, lr=None):
+class AvgOrTrackingValUpdater:
+    def __init__(self, action_values, lr=None):
         self.action_values = action_values
         self.lr = lr
         if lr is None:
             self.pick_count = np.zeros_like(action_values)
+
+    def __call__(self, rewards, msk, temp=None):
+        """
+        Updates the mutable object action_values.
+        """
+        if temp is None:
+            temp = np.arange(len(self.action_values))
+        if self.lr is None:
+            # update pick count;
+            self.pick_count[temp, msk] += 1
+
+            # update action values;
+            self.action_values[temp, msk] += (
+                rewards - self.action_values[temp, msk]
+            ) / self.pick_count[temp, msk]
+        else:
+            self.action_values[temp, msk] += (
+                rewards - self.action_values[temp, msk]
+            ) * self.lr
+
+
+class EpsGreedyEnv:
+    def __init__(self, algo, action_values, lr=None):
+        self.value_updater = AvgOrTrackingValUpdater(action_values, lr)
         self.algo = algo
         self.num_bandits, self.num_arms = self.action_values.shape
         self.temp = np.arange(len(action_values))
+
+    @property
+    def action_values(self):
+        return self.value_updater.action_values
+
+    @property
+    def pick_count(self):
+        if self.lr is None:
+            return self.value_updater.pick_count
+        return None
 
     def __call__(self, bandits) -> Tuple[np.ndarray]:
         """Get rewards and indexes of chosen arms."""
@@ -76,20 +110,41 @@ class EpsGreedyEnv:
         # sample rewards
         rewards = bandits[self.temp, msk].sample().numpy()
 
-        if self.lr is None:
-            # update pick count;
-            self.pick_count[self.temp, msk] += 1
+        # update action values;
+        self.value_updater(rewards, msk, self.temp)
+        return rewards, msk
 
-            # update action values;
-            self.action_values[self.temp, msk] += (
-                rewards - self.action_values[self.temp, msk]
-            ) / self.pick_count[self.temp, msk]
 
+class UCBEnv:
+    def __init__(self, action_values, c):
+        self.value_updater = AvgOrTrackingValUpdater(action_values)
+        self.t = 0
+        self.c = c
+        self.num_bandits, self.num_arms = action_values.shape
+        self.temp = np.arange(len(action_values))
+        self.never_tried = 0
+
+    @property
+    def action_values(self):
+        return self.value_updater.action_values
+
+    @property
+    def pick_count(self):
+        return self.value_updater.pick_count
+
+    def __call__(self, bandits) -> Tuple[np.ndarray]:
+        if self.never_tried < self.num_arms:
+            msk = np.ones((self.num_bandits,), dtype=int) * self.never_tried
+            rewards = bandits[:, self.never_tried].sample()
+            self.never_tried += 1
         else:
-            self.action_values[self.temp, msk] += (
-                rewards - self.action_values[self.temp, msk]
-            ) * self.lr
-
+            msk = (
+                self.action_values
+                + self.c * np.sqrt(log(self.t) / self.pick_count)
+            ).argmax(-1)
+            rewards = bandits[self.temp, msk].sample()
+        self.value_updater(rewards, msk, self.temp)
+        self.t += 1
         return rewards, msk
 
 
