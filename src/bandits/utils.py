@@ -87,9 +87,7 @@ class EpsGreedyEnv:
         )
 
         # presample 2000 random action indexes;
-        randoms = np.random.randint(
-            0, self.num_arms, size=(self.num_bandits,)
-        )
+        randoms = np.random.randint(0, self.num_arms, size=(self.num_bandits,))
 
         # get indexes of greedy with random tie breaking;
         greedies = (
@@ -134,15 +132,15 @@ class UCBEnv:
 
     def __call__(self, bandits) -> Tuple[np.ndarray]:
         if self.never_tried < self.num_arms:
-            msk = np.ones((self.num_bandits,), dtype=int) * self.never_tried
-            rewards = bandits[:, self.never_tried].sample()
+            msk = np.ones(self.num_bandits, dtype=int) * self.never_tried
             self.never_tried += 1
         else:
             msk = (
                 self.action_values
                 + self.c * np.sqrt(log(self.t) / self.pick_count)
             ).argmax(-1)
-            rewards = bandits[self.temp, msk].sample()
+        rewards = bandits[self.temp, msk].sample().numpy()
+        # print(rewards.shape, msk.shape, self.action_values.shape)
         self.value_updater(rewards, msk, self.temp)
         self.t += 1
         return rewards, msk
