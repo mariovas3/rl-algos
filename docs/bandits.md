@@ -36,7 +36,7 @@ No uncertainty is taken into account. To balance exploitation and exploration we
 
 If the estimate of the expectation is the sample average reward for each action, the hope is that if the bandit is stationary, as $T\rightarrow \infty$, we explore each action infinitely often and by the Law of Large Numbers the sample means of rewards per action converge to the true expectations of rewards for each action.
 
-If we have $|\mathcal{A}|$ actions, we pick greedy action/exploit with probability $1-\epsilon + \epsilon \times |\mathcal{A}_t^{\text{greedy}}| / |\mathcal{A}|$. The probability of non-greedy action is $\epsilon \times (|\mathcal{A}| - |\mathcal{A}_t^\text{greedy}|)/ |\mathcal{A}|$,  assuming $\mathcal{A}^\text{greedy}_t\sub \mathcal{A}$ is the set of greedy actions at time $t$.
+If we have $|\mathcal{A}|$ actions, we pick greedy action/exploit with probability $1-\epsilon + \epsilon \times |\mathcal{A}_t^{\text{greedy}}| / |\mathcal{A}|$. The probability of non-greedy action is $\epsilon \times (|\mathcal{A}| - |\mathcal{A}_t^\text{greedy}|)/ |\mathcal{A}|$,  assuming $\mathcal{A}^\text{greedy}_t \sub \mathcal{A}$ is the set of greedy actions at time $t$.
 
 The action values are usually updated using a version of stochastic gradient descent on the MSE of $\mathbb{E}[(R - Q(A_t))^2\mid A_t]$.
 The update is:
@@ -76,3 +76,37 @@ In the figure below I test the usefulness of optimistic initial action value wit
 If we use sample averaging as in the previous experiment, the effect of the initial value will be stopped after the first trial of the action. In order to see a prolonged effect of the initial value, I use tracking of action values with constant learning rate of $\alpha = 0.1$ as in the example in the Sutton and Barto book. As we can see, for this problem we made the greedy algorithm explore a lot more in the early stage due to the optimistic initial values and the early stage "disappointment" from the actions. After step 200, however, we see that the greed algorithm begins to outperform the epsilon-greedy strategy in both average reward and proportion of true optimal value picked. The code for this experiment can be found <a href="../src/bandits/optimistic_init.py">here</a>.
 
 <img alt="Greedy algorithm with optimistic initial value outperforms epsilon-greedy algorithm with zero initial value." src="../assets/imgs/optimistic_init.png" />
+
+
+### Upper Confidence Bound (UCB):
+The selection rule is:
+
+$$
+\begin{equation}
+    A_t = \arg \max_{a\in \mathcal{A}}\quad Q_t(a) + U_t(a),
+\end{equation}
+$$
+
+where
+
+$$
+\begin{equation}
+    U_t(a) = c\sqrt{\frac{\log t}{N_t(a)}}.
+\end{equation}
+$$
+
+The $c$ is a tunable parameter, but in the paper <a href="https://homes.di.unimi.it/~cesabian/Pubblicazioni/ml-02.pdf">Auer et.al 2002</a>, $c=\sqrt{2}$ is shown to lead to logarithmic expected total regret. The $N_t(a)$ is the number of times action $a$ was selected up to time $t$. The $Q_t(a)$ is the sample average reward from playing $a$ up to time $t$. The derivation is based on the Hoeffding inequality utilising bounded rewards in $R_t \in [0, 1]\quad \forall t$. Note that the general case for bounded rewards $R_t\in [b1, b2]$ can be reduced to the $R_t\in [0, 1]$ case by e.g., 
+
+
+$$
+\begin{equation}
+    \tilde{R}_t=\frac{R_t-b1}{b2-b1},
+\end{equation}
+$$
+
+so no generality is lost.
+
+I reproduced the plot from the Sutton and Barto book and also added the curves for UCB with $c=\sqrt{2}$ because I was curious how this would perform, given the theoretical results. It seems UCB with $c=\sqrt{2}$ indeed performs best on the 10 arm test bed as shown in the plot below.
+
+
+<img src="../assets/imgs/ucb-vs-epsgr.png"/>
