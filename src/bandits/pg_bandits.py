@@ -3,7 +3,6 @@ from pathlib import Path
 
 import numpy as np
 import torch
-import torch.distributions as dists
 from utils import (
     AvgRewardAndTrueOptTracker,
     SoftmaxPGEnv,

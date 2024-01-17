@@ -205,3 +205,15 @@ I test four settings of the gradient bandits algorithm:
 Based on the plot below (code <a href="../src/bandits/pg_bandits.py">here</a>), we see that the algorithms with baselines performed much better than their counterparts without baselines. The intuition behind this is that, in the case of the without baseline the baseline is effectively 0, but since the true mean rewards for each action is sampled from $\mathcal{N}(4, 1)$, it is extremely unlikely to get rewards below 0. This results in always increasing the probability of the selected action and decreasing the probabilities of the remaining actions. This also leads to much slower/noisy learning because it is difficult to discern good actions from bad actions. On the other hand, in the case with baselines after the first action is tried, the baseline becomes equal to the reward from that action, and unless the following actions lead to better rewards, their probabilities will be decreased. Moreover, as we sample more from the best action, the baseline will tend to the mean reward of the best action, making it ulikely for suboptimal actions to increase their probability of selection.
 
 <img src="../assets/imgs/pg-bandits.png"/>
+
+
+### Comparison of all algorithms:
+Below I have created two plots comparing greedy, epsilon greedy with $\epsilon=0.1$, UCB with $c=\sqrt{2}$, gradient bandit with $\text{lr}=0.1$ with baseline, and gradient bandit with $\text{lr}=0.1$ without baseline. The first plot has the true action values sampled from $\mathcal{N}(0, 1)$ while the second plot is an experiment where the true action values were sampled from $\mathcal{N}(4, 1)$.
+
+The UCB seems to win in both settings. In the first setting both gradient bandits seem to perform slightly better than epsilon greedy in terms of average reward and both slightly worse than epsilon greedy in terms of proportion of times the true optimal action was selected. The greedy algorithm performs the worst in this experiment.
+
+A big difference in performance again arises when we change the setup to sample true action values from $\mathcal{N}(4, 1)$. Similar to the plot where we compared gradient bandits only, here the gradient bandit without baseline again did much worse. The worst performing algorithm here, however, is the greedy algorithm. The intuition for the bad performance of the greedy bandit is that due to low initial values $Q_0=0$, and the relatively higher true values $q_*(a)\sim \mathcal{N}(4, 1)$, the first action tried is likely the one the greedy algorithm gets stuck with. This is because there is no incentive to explore since it is extremely unlikely to sample negative rewards from $\mathcal{N}(m\sim\mathcal{N(4, 1)}, 1)$. So unless the first action tried is the best action, the greedy algorithm is just stuck with a suboptimal action and incurs linear regret.
+
+<img src="../assets/imgs/all-algos-0-mean.png"/>
+
+<img src="../assets/imgs/all-algos-4-mean.png"/>

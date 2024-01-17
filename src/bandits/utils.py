@@ -91,6 +91,9 @@ class SoftmaxPGEnv:
             self.b += (rewards - self.b) / self.t
         return rewards.numpy(), msk.numpy()
 
+    def get_label(self):
+        return f"PG, lr={self.lr:.3f}, baseline={self.with_baseline}"
+
 
 class EpsGreedyEnv:
     def __init__(self, algo, action_values, lr=None):
@@ -98,6 +101,9 @@ class EpsGreedyEnv:
         self.algo = algo
         self.num_bandits, self.num_arms = self.action_values.shape
         self.temp = np.arange(len(action_values))
+
+    def get_label(self):
+        return f"$\epsilon=${1-self.algo.probs:.3f}"
 
     @property
     def action_values(self):
@@ -152,6 +158,9 @@ class UCBEnv:
         self.temp = np.arange(len(action_values))
         self.never_tried = 0
 
+    def get_label(self):
+        return f"UCB, c={self.c:.3f}"
+
     @property
     def action_values(self):
         return self.value_updater.action_values
@@ -186,7 +195,9 @@ def run_algo(idx, bandits, bandit_env, num_steps, metric_tracker):
         metric_tracker(rewards, msk, idx, t)
 
 
-def plot_testbed(file_name, labels, avg_rewards, prop_true_optimal):
+def plot_testbed(
+    file_name, labels, avg_rewards, prop_true_optimal, title=None
+):
     fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(7, 10))
     axs[0].set_ylabel("avg reward")
     axs[0].set_xlabel("Steps")
@@ -205,5 +216,7 @@ def plot_testbed(file_name, labels, avg_rewards, prop_true_optimal):
         )
         axs[0].legend()
         axs[1].legend()
+    if title:
+        plt.suptitle(title)
     fig.tight_layout()
     plt.savefig(file_name)
