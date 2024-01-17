@@ -27,9 +27,9 @@ class MyNormal(dists.Normal):
         return dists.Normal(loc=self.mean[idx], scale=self.scale[idx])
 
 
-def get_normal_bandits(num_bandits, num_arms):
+def get_normal_bandits(num_bandits, num_arms, mean=0.0):
     return MyNormal(
-        loc=dists.Normal(0.0, 1.0).sample(
+        loc=dists.Normal(mean, 1.0).sample(
             sample_shape=(num_bandits, num_arms)
         ),
         scale=1.0,
@@ -61,6 +61,35 @@ class AvgOrTrackingValUpdater:
             self.action_values[temp, msk] += (
                 rewards - self.action_values[temp, msk]
             ) * self.lr
+
+
+class SoftmaxPGEnv:
+    def __init__(
+        self, preferences: torch.Tensor, lr: float, with_baseline=True
+    ):
+        self.preferences = preferences
+        self.lr = lr
+        self.b = torch.zeros((len(self.preferences),))
+        self.t = 0
+        self.with_baseline = with_baseline
+        self.temp = np.arange(len(preferences))
+
+    def __call__(self, bandits) -> Tuple[np.ndarray]:
+        msk = dists.Categorical(logits=self.preferences).sample()
+        rewards = bandits[self.temp, msk].sample()
+
+        probs = torch.softmax(self.preferences, -1)[self.temp, msk]
+
+        # update preferences
+        adj_rewards = self.lr * (rewards - self.b)
+        self.preferences -= (adj_rewards * probs).view(-1, 1)
+        self.preferences[self.temp, msk] += adj_rewards
+
+        # update baseline;
+        self.t += 1
+        if self.with_baseline:
+            self.b += (rewards - self.b) / self.t
+        return rewards.numpy(), msk.numpy()
 
 
 class EpsGreedyEnv:
