@@ -27,9 +27,9 @@ class MyNormal(dists.Normal):
         return dists.Normal(loc=self.mean[idx], scale=self.scale[idx])
 
 
-def get_normal_bandits(num_bandits, num_arms):
+def get_normal_bandits(num_bandits, num_arms, mean=0.0):
     return MyNormal(
-        loc=dists.Normal(0.0, 1.0).sample(
+        loc=dists.Normal(mean, 1.0).sample(
             sample_shape=(num_bandits, num_arms)
         ),
         scale=1.0,
@@ -63,12 +63,47 @@ class AvgOrTrackingValUpdater:
             ) * self.lr
 
 
+class SoftmaxPGEnv:
+    def __init__(
+        self, preferences: torch.Tensor, lr: float, with_baseline=True
+    ):
+        self.preferences = preferences
+        self.lr = lr
+        self.b = torch.zeros((len(self.preferences),))
+        self.t = 0
+        self.with_baseline = with_baseline
+        self.temp = np.arange(len(preferences))
+
+    def __call__(self, bandits) -> Tuple[np.ndarray]:
+        msk = dists.Categorical(logits=self.preferences).sample()
+        rewards = bandits[self.temp, msk].sample()
+
+        probs = torch.softmax(self.preferences, -1)[self.temp, msk]
+
+        # update preferences
+        adj_rewards = self.lr * (rewards - self.b)
+        self.preferences -= (adj_rewards * probs).view(-1, 1)
+        self.preferences[self.temp, msk] += adj_rewards
+
+        # update baseline;
+        self.t += 1
+        if self.with_baseline:
+            self.b += (rewards - self.b) / self.t
+        return rewards.numpy(), msk.numpy()
+
+    def get_label(self):
+        return f"PG, lr={self.lr:.3f}, baseline={self.with_baseline}"
+
+
 class EpsGreedyEnv:
     def __init__(self, algo, action_values, lr=None):
         self.value_updater = AvgOrTrackingValUpdater(action_values, lr)
         self.algo = algo
         self.num_bandits, self.num_arms = self.action_values.shape
         self.temp = np.arange(len(action_values))
+
+    def get_label(self):
+        return f"$\epsilon=${1-self.algo.probs:.3f}"
 
     @property
     def action_values(self):
@@ -123,6 +158,9 @@ class UCBEnv:
         self.temp = np.arange(len(action_values))
         self.never_tried = 0
 
+    def get_label(self):
+        return f"UCB, c={self.c:.3f}"
+
     @property
     def action_values(self):
         return self.value_updater.action_values
@@ -157,7 +195,9 @@ def run_algo(idx, bandits, bandit_env, num_steps, metric_tracker):
         metric_tracker(rewards, msk, idx, t)
 
 
-def plot_testbed(file_name, labels, avg_rewards, prop_true_optimal):
+def plot_testbed(
+    file_name, labels, avg_rewards, prop_true_optimal, title=None
+):
     fig, axs = plt.subplots(nrows=2, ncols=1, figsize=(7, 10))
     axs[0].set_ylabel("avg reward")
     axs[0].set_xlabel("Steps")
@@ -176,5 +216,7 @@ def plot_testbed(file_name, labels, avg_rewards, prop_true_optimal):
         )
         axs[0].legend()
         axs[1].legend()
+    if title:
+        plt.suptitle(title)
     fig.tight_layout()
     plt.savefig(file_name)
