@@ -106,7 +106,7 @@ $$
 
 so no generality is lost.
 
-I reproduced the plot from the Sutton and Barto book and also added the curves for UCB with $c=\sqrt{2}$ because I was curious how this would perform, given the theoretical results. It seems UCB with $c=\sqrt{2}$ indeed performs best on the 10 arm test bed as shown in the plot below.
+I reproduced the plot from the Sutton and Barto book and also added the curves for UCB with $c=\sqrt{2}$ because I was curious how this would perform, given the theoretical results. It seems UCB with $c=\sqrt{2}$ indeed performs best on the 10 arm test bed as shown in the plot below. Code available <a href="../src/bandits/ucb_vs_epsgr.py">here</a>.
 
 Caveats:
 * UCB is not great for non-stationary problems since after a lot of time, the algorithm would have settled on what actions are good and will not be influenced a lot by the uncertainty term $U_t$. This 
@@ -115,3 +115,81 @@ makes the decision making dominated by being greedy on the action-value estimate
 
 
 <img src="../assets/imgs/ucb-vs-epsgr.png"/>
+
+
+### Policy Gradient Bandits:
+Since we are in the bandits case, we only have one state, so when we define an explicit policy, $\pi_\theta$, it is usually parameterised by a parameter vector, $\theta$, and maintains an internal state that summarises preference to the different actions. In the full RL problem, the policy usually takes as input the state or some summary thereof to update its internal state accordingly.
+
+If the policy is stochastic, it is common to output a distribution over actions from which we can sample. If the policy is deterministic, it directly performs some deterministic operation based on its internal state (given by $\theta$).
+
+In this section I will cover a stochastic shallow softmax policy, designed to work for finite action spaces. Suppose we have a particular enumeration of actions $(a_i)_{i}^{|\mathcal{A}|}$ and that the $i^{th}$ element of the parameter vector $\theta$, $\theta_i$, corresponds to the preference for the $i^{th}$ action according to the enumeration. Based on $\theta$, the policy maintains a distribution over actions:
+
+$$
+\begin{equation}
+    \pi_\theta(a_i)=\frac{
+        e^{\theta_i}
+    }{\sum_{j=1}^{|\mathcal{A}|} e^{\theta_j}}.
+\end{equation}
+$$
+
+Since the episodes in bandit problems are of length one, it makes sense to use the single step expected reward as the objective to be maximised with respect to the parameter vector $\theta$. The expectation can be written as:
+
+$$
+\begin{align}
+    \mathbb{E}^{\pi_\theta}[R_t]&=\sum_{i=1}^{|\mathcal{A}|}\pi_\theta(a_i) \mathbb{E}[R_t|A_t=a_i]\notag\\
+    &=\sum_{i=1}^{|\mathcal{A}|}q_*(a_i)\pi_\theta(a_i),
+\end{align}
+$$
+
+where $q_*(a_i):=\mathbb{E}[R_t|A_t=a_i]$ is the true, but unknown expected reward for the $i^{th}$ action according to the chosen enumeration.
+
+
+As with policy gradients we use the REINFORCE trick to make the actual gradient into an expectation of an expression containing the gradient of the log policy. We also note that given the softmax policy, one can show that
+
+$$
+\begin{equation}
+    \sum_{i=1}^{|\mathcal{A}|}\frac{\partial \pi_\theta(a_i)}{\partial \theta_k}=0,
+\end{equation}
+$$
+
+so adding a baseline that does not depend on the actions does not change the gradient of the expected reward
+
+$$
+\begin{align}
+    \frac{\partial \mathbb{E}^{\pi_\theta}[R_t]}{\partial \theta_k}&= 
+    \sum_{i=1}^{|\mathcal{A}|}q_*(a_i)\frac{\partial \pi_\theta(a_i)}{\partial \theta_k}\notag\\
+    &=\sum_{i=1}^{|\mathcal{A}|}(q_*(a_i) - B_t)\frac{\partial \pi_\theta(a_i)}{\partial \theta_k}.
+\end{align}
+$$
+
+There is research on optimal choices of a baseline, however, the simple sample average of all rewards up to but not including the current, is easy to compute and often works well.
+
+After using the REINFORCE trick we get:
+
+$$
+\begin{align}
+    \frac{\partial \mathbb{E}^{\pi_\theta}[R_t]}{\partial \theta_k}&=
+    \mathbb{E}_{A_t\sim\pi_\theta}\left[(q_*(A_t) - B_t)\frac{
+        \partial \log \pi_\theta(A_t)
+    }{\partial \theta_k}\right]\notag\\
+    &=\mathbb{E}\left[
+        (R_t-B_t)\frac{
+        \partial \log \pi_\theta(A_t)
+    }{\partial \theta_k}
+    \right] && \text{(iterated expectations)}\notag\\
+    &=\mathbb{E}\left[
+        (R_t-B_t)(1_{A_t=a_k} - \pi_\theta(a_k))
+    \right].
+\end{align}
+$$
+
+We can sample the above expectation (first sample $A_t\sim \pi_\theta^{(t)}$, then receive reward $R_t$) to get a stochastic gradient ascent update:
+
+$$
+\begin{align}
+    \theta_k^{(t+1)}&\leftarrow \theta_k^{(t)} + \alpha (R_t-B_t)(1-\pi_\theta^{(t)}(a_k))  && \text{, if $A_t=a_k$}\\
+    \theta_k^{(t+1)}&\leftarrow \theta_k^{(t)} - \alpha (R_t-B_t)\pi_\theta^{(t)}(a_k)  && \text{, otherwise.}
+\end{align}
+$$
+
+The insight from the above updates is that if the current reward received as a consequence of picking $A_t$ is greater than the baseline, $B_t$, we increase the probability of picking the same action later and decrease the probabilities of the other actions. If the current reward is less than $B_t$, the opposite is true.
