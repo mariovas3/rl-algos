@@ -208,7 +208,7 @@ Based on the plot below (code <a href="../src/bandits/pg_bandits.py">here</a>), 
 
 
 ### Comparison of all algorithms:
-Below I have created two plots comparing greedy, epsilon greedy with $\epsilon=0.1$, UCB with $c=\sqrt{2}$, gradient bandit with $\text{lr}=0.1$ with baseline, and gradient bandit with $\text{lr}=0.1$ without baseline. The first plot has the true action values sampled from $\mathcal{N}(0, 1)$ while the second plot is an experiment where the true action values were sampled from $\mathcal{N}(4, 1)$.
+Below I have created two plots (code <a href="../src/bandits/all_algos.py">here</a>)comparing greedy, epsilon greedy with $\epsilon=0.1$, UCB with $c=\sqrt{2}$, gradient bandit with $\text{lr}=0.1$ with baseline, and gradient bandit with $\text{lr}=0.1$ without baseline. The first plot has the true action values sampled from $\mathcal{N}(0, 1)$ while the second plot is an experiment where the true action values were sampled from $\mathcal{N}(4, 1)$.
 
 The UCB seems to win in both settings. In the first setting both gradient bandits seem to perform slightly better than epsilon greedy in terms of average reward and both slightly worse than epsilon greedy in terms of proportion of times the true optimal action was selected. The greedy algorithm performs the worst in this experiment.
 
