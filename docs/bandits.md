@@ -193,3 +193,15 @@ $$
 $$
 
 The insight from the above updates is that if the current reward received as a consequence of picking $A_t$ is greater than the baseline, $B_t$, we increase the probability of picking the same action later and decrease the probabilities of the other actions. If the current reward is less than $B_t$, the opposite is true.
+
+In the plot below I show the average reward and the proportion of times the true best action was selected by the above algorithm. The experiment setup is again based on the ten armed testbed, only this time each action's mean reward is sampled from $\mathcal{N}(4, 1)$ rather than $\mathcal{N}(0, 1)$. This is so that we can more clearly see the defference in performance of the algorithms with and without a baseline. As in the 10 arm testbed, we have 2000 bandits each with 10 arms.
+
+I test four settings of the gradient bandits algorithm:
+* learning rate = 0.1, with baseline,
+* learning rate = 0.1, without baseline,
+* learning rate = 0.4, with baseline,
+* learning rate = 0.4, without baseline.
+
+Based on the plot below (code <a href="../src/bandits/pg_bandits.py">here</a>), we see that the algorithms with baselines performed much better than their counterparts without baselines. The intuition behind this is that, in the case of the without baseline the baseline is effectively 0, but since the true mean rewards for each action is sampled from $\mathcal{N}(4, 1)$, it is extremely unlikely to get rewards below 0. This results in always increasing the probability of the selected action and decreasing the probabilities of the remaining actions. This also leads to much slower/noisy learning because it is difficult to discern good actions from bad actions. On the other hand, in the case with baselines after the first action is tried, the baseline becomes equal to the reward from that action, and unless the following actions lead to better rewards, their probabilities will be decreased. Moreover, as we sample more from the best action, the baseline will tend to the mean reward of the best action, making it ulikely for suboptimal actions to increase their probability of selection.
+
+<img src="../assets/imgs/pg-bandits.png"/>
