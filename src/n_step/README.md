@@ -12,11 +12,7 @@ $$
 $$
 
 
-$$
-\begin{equation}
-    \tilde{G}_{t+1:t+n-1} = R_{t+1}
-\end{equation}
-$$
+<img src="../../assets/imgs/gh_cant_render_latex.png"/>
 
 
 $$
