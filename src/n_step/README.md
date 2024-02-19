@@ -14,7 +14,7 @@ $$
 
 $$
 \begin{equation}
-	\tilde{G}_{t+1:t+n-1} = R_{t+1} + \sum_{k=1}^{n-1} \gamma^{k} \rho_{t+1:t+k}R_{t+1+k} + \gamma^n \rho_{t+1:t+n-1} \max_a Q(S_{t+n}, a)
+	\tilde{G}_{t+1:t+n-1} = R_{t+1} 
 \end{equation}
 $$
 
