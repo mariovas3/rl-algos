@@ -6,14 +6,21 @@ It's an off-policy method, since behaves with exploring policy and evaluates the
 The update:
 
 $$
-\begin{align}
-    Q(S_t, A_t) &= Q(S_t, A_t) + \alpha (\tilde{G}_{t+1:t+n-1} - Q(S_t, A_t))\notag\\
-    \tilde{G}_{t+1:t+n-1}&= R_{t+1} 
-    + \sum_{k=1}^{n-1}\gamma^{k} \rho_{t+1:t+k}R_{t+1+k}
-    + \gamma^n\rho_{t+1:t+n-1}\max_a Q(S_{t+n}, a)\notag\\
-    \rho_{i:j}&=\prod_{k=i}^j \frac{\pi(A_k\mid S_k)}{\mu(A_k\mid S_k)}.
-\end{align}
+\begin{equation}
+    Q(S_t, A_t) = Q(S_t, A_t) + \alpha (\tilde{G}_{t+1:t+n-1} - Q(S_t, A_t))
+\end{equation}
 $$
+
+
+<img src="../../assets/imgs/gh_cant_render_latex.png"/>
+
+
+$$
+\begin{equation}
+	\rho_{i:j}=\prod_{k=i}^j \frac{\pi(A_k\mid S_k)}{\mu(A_k\mid S_k)}.
+\end{equation}
+$$
+
 
 In the above, if $S_{t+n}$ is terminal, then we zero out the last term.
 
@@ -41,7 +48,7 @@ Mathematically, given two value functions $Q_1$ and $Q_2$, the $n=1$ update for 
 
 $$
 \begin{equation}
-    Q_1(S_t, A_t) = Q_1(S_t, A_t) + \alpha [R_{t+1} + \gamma Q_2(S_{t+1}, \argmax_a Q_1(S_{t+1}, a)) - Q_1(S_t, A_t)]
+    Q_1(S_t, A_t) = Q_1(S_t, A_t) + \alpha [R_{t+1} + \gamma Q_2(S_{t+1}, \arg \max_a Q_1(S_{t+1}, a)) - Q_1(S_t, A_t)]
 \end{equation}
 $$
 
