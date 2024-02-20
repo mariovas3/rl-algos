@@ -15,7 +15,6 @@ def get_moving_avgs(returns_over_episodes, num_steps):
             "issue in moving avg generation; "
             f"not enough data for {num_steps} step ma;\n"
         )
-        return []
         raise ValueError(
             "num_steps should be less than"
             " or equal to length of returns_over_episodes"
