@@ -98,7 +98,6 @@ if __name__ == "__main__":
         for arg in sys.argv[1:]:
             k, v = arg.split("=")
             if k in experiment_config:
-                print(k)
                 if re.match(float_pattern, v):
                     experiment_config[k] = float(v)
                 elif re.match(int_pattern, v):
