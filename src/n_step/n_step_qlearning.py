@@ -54,17 +54,13 @@ def qlearning(num_steps, num_episodes, env, Q, behaviour, discount, lr):
 
                     # do Q update;
                     old_obs, old_a = obs_action[0]
-                    if terminated:
-                        Q[old_obs][old_a] = Q[old_obs][old_a] + lr * (
-                            G - Q[old_obs][old_a]
-                        )
-                    else:
-                        action_greedy = policy.sample(obstp1)
-                        Q[old_obs][old_a] = Q[old_obs][old_a] + lr * (
-                            G
-                            + W * Q[obstp1][action_greedy]
-                            - Q[old_obs][old_a]
-                        )
+                    action_greedy = policy.sample(obstp1)
+                    Q[old_obs][old_a] = Q[old_obs][old_a] + lr * (
+                        G
+                        + W * Q[obstp1][action_greedy] * (1 - terminated)
+                        - Q[old_obs][old_a]
+                    )
+                    obs, action = obstp1, behaviour.sample(obstp1)
 
                     if num_steps > 1:
                         # get rid of oldest reward
@@ -78,10 +74,7 @@ def qlearning(num_steps, num_episodes, env, Q, behaviour, discount, lr):
                 # update finished;
                 finished = terminated or truncated
 
-                # update obs and action;
-                if not finished:
-                    obs, action = obstp1, behaviour.sample(obstp1)
-                else:
+                if finished:
                     # bookkeeping;
                     if shortest_ep > t:
                         shortest_ep = t
