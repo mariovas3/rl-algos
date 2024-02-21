@@ -1,45 +1,39 @@
 import random
-from collections import namedtuple
-from numbers import Integral, Number
+from pathlib import Path
 
-ActionQval = namedtuple("ActionQval", "a qval")
+import torch
+
+# path to rl-algos/src
+p = Path(__file__).absolute().parent.parent
+import sys
+
+sys.path.append(str(p))
+from envs.grid_world import MyCategorical
 
 
 class TabularGreedy:
-    def __init__(self, action_space):
-        self.estimates = {}
-        self.action_space = action_space
-
-    @classmethod
-    def init_from_Q(cls, action_space, Q):
-        ob = cls(action_space)
-        for obs in Q:
-            ob.estimates[obs] = max(Q[obs], key=lambda x: x[-1])
-        return ob
-
-    def update(self, obs, a, qval):
-        assert isinstance(a, Integral)
-        assert isinstance(qval, Number)
-        if obs in self.estimates:
-            if self.estimates[obs].qval < qval:
-                self.estimates[obs] = ActionQval(a, qval)
-        else:
-            self.estimates[obs] = ActionQval(a, qval)
+    def __init__(self, Q):
+        # Q is dict[list[qval]]
+        self.Q = Q
 
     def sample(self, obs):
-        if obs in self.estimates:
-            return self.estimates[obs].a
-        return self.action_space.sample()
+        maxq = max(self.Q[obs])
+        # random tie breaks;
+        return MyCategorical(
+            probs=torch.tensor([maxq == qval for qval in self.Q[obs]])
+        ).sample()
 
     def prob(self, obs, action):
-        if obs in self.estimates:
-            return float(action == self.estimates[obs].a)
-        return 1 / self.action_space.n
+        maxq = max(self.Q[obs])
+        if self.Q[obs][action] != maxq:
+            return 0
+        return 1 / sum([maxq == qval for qval in self.Q[obs]])
 
 
 class TabularEpsGreedy(TabularGreedy):
-    def __init__(self, action_space, eps):
-        super().__init__(action_space)
+    def __init__(self, Q, action_space, eps):
+        super().__init__(Q)
+        self.action_space = action_space
         self.eps = eps
 
     def sample(self, obs):
@@ -49,9 +43,8 @@ class TabularEpsGreedy(TabularGreedy):
         return super().sample(obs)
 
     def prob(self, obs, action):
-        if obs in self.estimates:
-            temp = self.eps / self.action_space.n
-            if action == self.estimates[obs].a:
-                return 1 - self.eps + temp
-            return temp
-        return 1 / self.action_space.n
+        maxq = max(self.Q[obs])
+        N = self.action_space.n
+        if self.Q[obs][action] == maxq:
+            return 1 - self.eps + self.eps / N
+        return self.eps * (N - 1) / N

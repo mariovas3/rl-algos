@@ -14,10 +14,12 @@ class MyCategorical(Categorical):
 
 
 class GridWorld2d:
+    """The Grid world from the S-B book."""
+
     def __init__(self):
-        self.HEIGHT, self.WIDTH = 10, 10
-        self.wall = set((h, 7) for h in range(self.HEIGHT - 3))
-        self.goal = (0, 9)  # top right;
+        self.HEIGHT, self.WIDTH = 6, 9
+        self.wall = {(1, 2), (2, 2), (3, 2), (4, 5), (0, 7), (1, 7), (2, 7)}
+        self.goal = (0, 8)  # top right;
         self.action_space = MyCategorical(probs=tones((4,)))
 
     def reset(self, start=None):

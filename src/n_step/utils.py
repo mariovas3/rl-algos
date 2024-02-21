@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def get_policy_vis(env, policy, action_decoder):
     print(f"\n{'-'*20}\nLearned Policy:\n{'-'*20}\n\n")
     policy_vis = []
@@ -12,8 +15,9 @@ def get_policy_vis(env, policy, action_decoder):
                 print("G", end="  ")
                 temp.append("G")
             else:
-                if obs in policy.estimates:
-                    d = action_decoder[policy.estimates[obs].a]
+                best = np.argmax(policy.Q[obs])
+                if policy.Q[obs][best]:
+                    d = action_decoder[best]
                     print(d, end="  ")
                     temp.append(d)
                 else:
@@ -28,16 +32,11 @@ def eval_from_start(start, env, policy):
     obs_action = {}
     obs, _ = env.reset(start=start)
     while obs != env.goal:
-        if obs not in policy.estimates:
-            raise KeyError(repr(obs) + " not explored")
-        action = policy.estimates[obs].a
+        action = policy.sample(obs)
         obs_action[obs] = action
         obstp1, _, _, _, _ = env.step(action)
         if obstp1 in obs_action:
             raise AssertionError("state-action loop detected")
-        if obs == obstp1:
-            print("stuck at " + repr(obs))
-            return obs_action
         obs = obstp1
     return obs_action
 
