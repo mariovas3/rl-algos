@@ -6,8 +6,11 @@ from policies import TabularGreedy
 def qlearning(num_steps, num_episodes, env, Q, behaviour, discount, lr):
     policy = TabularGreedy(Q)
     ep_lens = []
+    K = 0
+    shortest_ep = 1e8
+    shortest_ep_idx = None
 
-    while num_episodes > 0:
+    while K < num_episodes:
         obs_action = deque()
         rewards = deque()
         imp_weights = deque()
@@ -21,7 +24,7 @@ def qlearning(num_steps, num_episodes, env, Q, behaviour, discount, lr):
                 obstp1, R, terminated, truncated, _ = env.step(action)
                 obs_action.append((obs, action))
                 rewards.append(R)
-                print(f"obs: {obs}, action={action}, R={R}, t={t}")
+                # print(f"obs: {obs}, action={action}, R={R}, t={t}")
 
                 if t < num_steps:
                     # num_steps >= 2;
@@ -80,11 +83,14 @@ def qlearning(num_steps, num_episodes, env, Q, behaviour, discount, lr):
                     obs, action = obstp1, behaviour.sample(obstp1)
                 else:
                     # bookkeeping;
+                    if shortest_ep > t:
+                        shortest_ep = t
+                        shortest_ep_idx = K + 1
                     ep_lens.append(t)
                     if num_steps == 1:
                         break
             else:
-                print(f"finished={finished}, t={t}")
+                # print(f"finished={finished}, t={t}")
                 old_obs, old_a = obs_action[0]
                 Q[old_obs][old_a] = Q[old_obs][old_a] + lr * (
                     G - Q[old_obs][old_a]
@@ -102,7 +108,10 @@ def qlearning(num_steps, num_episodes, env, Q, behaviour, discount, lr):
             t += 1
 
         # decrement num episodes to do;
-        num_episodes -= 1
+        K += 1
+        if (K + 1) % (num_episodes // 10) == 0:
+            print(f"{(K+1) // (num_episodes // 10)}0% episodes done!")
+    print(f"shortest episode: {shortest_ep}, ep_idx: {shortest_ep_idx}")
     return policy, ep_lens
 
 
@@ -112,6 +121,7 @@ experiment_config = dict(
     discount=0.95,
     lr=0.1,
     eps=0.1,
+    seed=4,
 )
 
 
@@ -140,10 +150,6 @@ if __name__ == "__main__":
 
     from envs.grid_world import GridWorld2d
 
-    random.seed(0)
-    np.random.seed(0)
-    torch.manual_seed(0)
-
     float_pattern = re.compile("[0-9]\.[0-9]*")
     int_pattern = re.compile("[1-9][0-9]*")
 
@@ -155,8 +161,16 @@ if __name__ == "__main__":
                     experiment_config[k] = float(v)
                 elif re.match(int_pattern, v):
                     experiment_config[k] = int(v)
+            else:
+                print(f"{'-'*30}\n{k} no a valid experiment arg\n{'-'}*30")
 
     print(experiment_config, end="\n\n")
+
+    seed = experiment_config["seed"]
+
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
     env = GridWorld2d()
     Q = {
