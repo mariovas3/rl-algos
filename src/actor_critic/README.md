@@ -5,6 +5,11 @@ Below is a gif of my trained PPO model:
 ![](../../assets/gifs/eval_lunarlander_v2_greedy_ppo_mine.gif)
 
 
+Some rollout logs in wandb comparing the run with $\lambda = 0.99$ (light blue) with $\lambda = 0.9$ (grey), all else equal.
+
+<img src="../../assets/imgs/rollout_logs_ppo_lam_0.99_vs_0.9.png" alt="rollout logs of my PPO implementation"/>
+
+
 ### Reference papers and blog posts:
 * <a href="https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/">37 tricks from CleanRL</a>
 * Engstrom, Ilyas, et. al., (2020).
