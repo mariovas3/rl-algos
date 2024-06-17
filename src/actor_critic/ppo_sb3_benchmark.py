@@ -31,9 +31,6 @@ if __name__ == "__main__":
         lr=3e-4,
         num_envs=NUM_ENVS,
     )
-    print(
-        f"training for {config['num_iters'] * config['num_envs'] * config['steps_per_iter']} steps..."
-    )
     run = wandb.init(project="rl-algos", name="ppo-sb3-run", config=config)
 
     class Logger:
@@ -62,7 +59,9 @@ if __name__ == "__main__":
         seed=0,
     )
     model.set_logger(logger=logger)
-
+    print(
+        f"Training for {config['num_iters'] * config['num_envs'] * config['steps_per_iter']} steps...\n\n"
+    )
     model.learn(
         total_timesteps=config["num_iters"]
         * config["steps_per_iter"]
