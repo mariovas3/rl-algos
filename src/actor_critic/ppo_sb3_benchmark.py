@@ -26,7 +26,7 @@ if __name__ == "__main__":
         batch_size=128,
         seed=0,
         discount=0.99,
-        lam=0.9,
+        lam=0.99,
         eps=0.2,
         lr=3e-4,
         num_envs=NUM_ENVS,
