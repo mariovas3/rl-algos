@@ -1,4 +1,10 @@
 ## PPO Tips and Tricks:
+
+Below is a gif of my trained PPO model:
+
+![](../../assets/gifs/eval_lunarlander_v2_greedy_ppo_mine.gif)
+
+
 ### Reference papers and blog posts:
 * <a href="https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/">37 tricks from CleanRL</a>
 * Engstrom, Ilyas, et. al., (2020).
@@ -16,13 +22,6 @@ I tested my version of vanilla PPO against PPO from stable baselines3. After tra
 Finally, I also computed advantages in batches after the experience is collected. This resulted in a speedup since there's less overhead compared to computing values one at a time in an online fashion while sampling experience. This is something that is not done in the cleanRL implementation. 
 
 It looks like sb3 also don't do this in batches and as a result the above experiments with sb3 took 18m and 30s on an intel i5 machine while my implementation was done in **15m and 25s**. Both experiments had the exact same configs.
-
-Below is a video of my trained model:
-
-<video width="600" controls>
-  <source src="https://drive.google.com/file/d/1EQ6Rr8PS7zvMb3A0PAk6drRjR2htCoPH/view?usp=sharing" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
 
 ### My suggestions:
 * There could be better hyper-param settings. I tuned my hyperparams based on gut feeling. In summary, it seems the model is quite sensitive to the number of env steps made in each iteration as well as the horizon of the advantages. Which makes sense since we want to trade off greedyness for long-term "planning" behaviour. Longer horizons (around 50) and more timesteps (2048 about double the default 1000 step truncation length) seemed to work well for `LunarLander-v2`. 
