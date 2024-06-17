@@ -1,2 +1,10 @@
-__pycache__
 logs
+wandb
+saved_models
+notebooks
+*.ipynb
+*.ipynb_checkpoints
+*__pycache__
+*.zip
+data/downloaded
+data/processed
