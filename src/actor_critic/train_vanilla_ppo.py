@@ -199,20 +199,20 @@ if __name__ == "__main__":
     # the whole config thing;
     NUM_ENVS = 8
     env = gym.vector.make("LunarLander-v2", num_envs=NUM_ENVS)
-    env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=20)
+    env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=100)
     config = dict(
         mlp_config=dict(
             in_dim=env.unwrapped.single_observation_space.shape[0],
             n_hidden=2,
             hidden_dim=64,
         ),
-        num_iters=50,
+        num_iters=61,
         epochs_per_iter=10,
         steps_per_iter=2048,
         batch_size=128,
         seed=0,
         discount=0.99,
-        lam=0.9,
+        lam=0.99,
         eps=0.2,
         lr=3e-4,
         num_envs=NUM_ENVS,
