@@ -1,12 +1,18 @@
 import math
+import time
 from itertools import chain
+from pathlib import Path
 
+import gymnasium as gym
+import hydra
 import numpy as np
 import torch
 from gymnasium.vector import VectorEnv
+from omegaconf import DictConfig, OmegaConf
 from torch import nn
 
 import wandb
+from src.actor_critic.policy import MLP, DiscretePolicy, ortho_init_
 from src.actor_critic.utils import (
     collect_T_steps,
     compute_advantages_returns_and_log_probs,
@@ -179,15 +185,26 @@ def eval_loop(policy, env, greedy=False, seed=0):
     return ep_len, ep_return, avg_reward
 
 
-if __name__ == "__main__":
-    import time
-    from pathlib import Path
+config_path = Path(__file__).absolute().parents[2] / "conf"
 
-    import gymnasium as gym
 
-    from src.actor_critic.policy import MLP, DiscretePolicy, ortho_init_
+@hydra.main(
+    config_path=str(config_path),
+    config_name="actor_critic",
+    version_base="1.3",
+)
+def main(config: DictConfig):
+    # make the DictConfig object a mutable dict;
+    config = OmegaConf.to_container(config, resolve=True)
+    tot_steps = (
+        config["ac_agent"]["num_iters"]
+        * config["ac_agent"]["num_envs"]
+        * config["ac_agent"]["steps_per_iter"]
+    )
+    assert tot_steps <= config["ac_agent"]["max_time_steps"]
 
-    torch.manual_seed(0)
+    # set seed;
+    torch.manual_seed(config["ac_agent"]["seed"])
 
     p = (
         Path(__file__).absolute().parents[2]
@@ -197,77 +214,62 @@ if __name__ == "__main__":
     p.mkdir(parents=True, exist_ok=True)
 
     # the whole config thing;
-    NUM_ENVS = 8
+    NUM_ENVS = config["ac_agent"]["num_envs"]
     env = gym.vector.make("LunarLander-v2", num_envs=NUM_ENVS)
     env = gym.wrappers.RecordEpisodeStatistics(env, deque_size=100)
-    config = dict(
-        mlp_config=dict(
-            in_dim=env.unwrapped.single_observation_space.shape[0],
-            n_hidden=2,
-            hidden_dim=64,
-        ),
-        num_iters=61,
-        epochs_per_iter=10,
-        steps_per_iter=2048,
-        batch_size=128,
-        seed=0,
-        discount=0.99,
-        lam=0.99,
-        eps=0.2,
-        lr=3e-4,
-        num_envs=NUM_ENVS,
-        adam_eps=1e-5,
-        max_grad_norm=0.5,
-        standardise_advantage=True,
-        ortho_init=True,
-    )
+    config["ac_agent"]["mlp_config"][
+        "in_dim"
+    ] = env.unwrapped.single_observation_space.shape[0]
 
     # init vfunc;
-    vfunc = MLP(**config["mlp_config"], out_dim=1)
-    if config["ortho_init"]:
+    vfunc = MLP(**config["ac_agent"]["mlp_config"], out_dim=1)
+    if config["ac_agent"]["ortho_init"]:
         ortho_init_(vfunc, hidden_gain=math.sqrt(2), out_layer_gain=1)
 
     # init policy;
     policy = DiscretePolicy(
-        **config["mlp_config"],
+        **config["ac_agent"]["mlp_config"],
         out_dim=env.unwrapped.single_action_space.n,
         hidden_gain=math.sqrt(2),
         out_layer_gain=0.01,
-        ortho_init=config["ortho_init"],
+        ortho_init=config["ac_agent"]["ortho_init"],
     )
 
     # init optimisers;
     policy_optim = torch.optim.Adam(
-        policy.parameters(), lr=config["lr"], eps=config["adam_eps"]
+        policy.parameters(),
+        lr=config["ac_agent"]["lr"],
+        eps=config["ac_agent"]["adam_eps"],
     )
     vfunc_optim = torch.optim.Adam(
         vfunc.parameters(),
-        lr=config["lr"],
-        eps=config["adam_eps"],
+        lr=config["ac_agent"]["lr"],
+        eps=config["ac_agent"]["adam_eps"],
     )
 
     # init wandb;
-    run = wandb.init(project="rl-algos", name="ppo-local-run", config=config)
-    print(
-        f"Training for {config['num_iters'] * config['num_envs'] * config['steps_per_iter']} steps...\n\n"
+    run = wandb.init(
+        project="rl-algos", name="ppo-local-run", config=config["ac_agent"]
     )
+
+    print(f"Training for {tot_steps} steps...\n\n")
     # train the agent;
     train_loop(
         vfunc=vfunc,
         policy=policy,
         env=env,
-        num_iters=config["num_iters"],
-        epochs_per_iter=config["epochs_per_iter"],
-        steps_per_iter=config["steps_per_iter"],
+        num_iters=config["ac_agent"]["num_iters"],
+        epochs_per_iter=config["ac_agent"]["epochs_per_iter"],
+        steps_per_iter=config["ac_agent"]["steps_per_iter"],
         policy_optim=policy_optim,
         vfunc_optim=vfunc_optim,
-        seed=config["seed"],
-        discount=config["discount"],
-        lam=config["lam"],
-        batch_size=config["batch_size"],
-        eps=config["eps"],
-        max_grad_norm=config["max_grad_norm"],
-        standardise_advantage=config["standardise_advantage"],
+        seed=config["ac_agent"]["seed"],
+        discount=config["ac_agent"]["discount"],
+        lam=config["ac_agent"]["lam"],
+        batch_size=config["ac_agent"]["batch_size"],
+        eps=config["ac_agent"]["eps"],
+        max_grad_norm=config["ac_agent"]["max_grad_norm"],
+        standardise_advantage=config["ac_agent"]["standardise_advantage"],
     )
 
     # release resources;
@@ -277,10 +279,10 @@ if __name__ == "__main__":
     # save checkpoint assuming other config is saved in wandb;
     torch.save(
         {
-            "iters_done": config["num_iters"],
-            "steps_per_iter": config["steps_per_iter"],
-            "epochs_per_iter": config["epochs_per_iter"],
-            "batch_size": config["batch_size"],
+            "iters_done": config["ac_agent"]["num_iters"],
+            "steps_per_iter": config["ac_agent"]["steps_per_iter"],
+            "epochs_per_iter": config["ac_agent"]["epochs_per_iter"],
+            "batch_size": config["ac_agent"]["batch_size"],
             "policy_state_dict": policy.state_dict(),
             "policy_optim_state_dict": policy_optim.state_dict(),
             "vfunc_state_dict": vfunc.state_dict(),
@@ -305,3 +307,7 @@ if __name__ == "__main__":
     print(
         f"ep_len: {ep_len}\nep_return: {ep_return}\navg_reward: {avg_reward}"
     )
+
+
+if __name__ == "__main__":
+    main()
