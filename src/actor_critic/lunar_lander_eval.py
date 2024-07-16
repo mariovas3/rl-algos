@@ -6,7 +6,7 @@ import gymnasium as gym
 import torch
 
 from src.actor_critic.policy import MLP, DiscretePolicy
-from src.actor_critic.train_vanilla_ppo import eval_loop
+from src.actor_critic.utils import eval_loop
 
 parser = ArgumentParser()
 parser.add_argument("--greedy", action="store_true", help="set greedy eval")

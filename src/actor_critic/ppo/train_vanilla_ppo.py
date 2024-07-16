@@ -1,7 +1,6 @@
 import math
 import time
 from itertools import chain
-from pathlib import Path
 
 import gymnasium as gym
 import hydra
@@ -16,9 +15,11 @@ from src.actor_critic.policy import MLP, DiscretePolicy, ortho_init_
 from src.actor_critic.utils import (
     collect_T_steps,
     compute_advantages_returns_and_log_probs,
+    eval_loop,
     get_loader,
     objective_clip,
 )
+from src.metadata import metadata
 
 
 def train_loop(
@@ -160,36 +161,8 @@ def train_loop(
         )
 
 
-def eval_loop(policy, env, greedy=False, seed=0):
-    if greedy:
-        policy.greedify()
-    policy.eval()
-    torch.manual_seed(seed=seed)
-
-    obs_t, info = env.reset(seed=seed)
-    done = False
-    avg_reward = 0.0
-    ep_len = 0.0
-    ep_return = 0.0
-    with torch.no_grad():
-        while not done:
-            action = policy.sample(
-                torch.tensor(obs_t, dtype=torch.float32)
-            ).numpy()
-            obs_tp1, reward, terminated, truncated, info = env.step(action)
-            done = terminated or truncated
-            obs_t = obs_tp1
-            ep_return += reward
-            ep_len += 1
-            avg_reward = avg_reward + (reward - avg_reward) / ep_len
-    return ep_len, ep_return, avg_reward
-
-
-config_path = Path(__file__).absolute().parents[2] / "conf"
-
-
 @hydra.main(
-    config_path=str(config_path),
+    config_path=str(metadata.CONFIG_PATH),
     config_name="actor_critic",
     version_base="1.3",
 )
@@ -206,11 +179,7 @@ def main(config: DictConfig):
     # set seed;
     torch.manual_seed(config["ac_agent"]["seed"])
 
-    p = (
-        Path(__file__).absolute().parents[2]
-        / "saved_models"
-        / f"my_ppo_{time.time()}"
-    )
+    p = metadata.SAVED_MODELS_PATH / f"my_ppo_{time.time()}"
     p.mkdir(parents=True, exist_ok=True)
 
     # the whole config thing;

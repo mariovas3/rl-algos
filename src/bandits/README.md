@@ -61,9 +61,9 @@ $$
 Even if the Robbins-Monro conditions are satisfied, however, convergence can be slow and tough to tune a good learning rate decay. Instead we might just opt in for an exponentially moving avg with constant learning rate $\alpha\in (0, 1]$. This is a form of tracking since the relevance of past rewards decays by a factor of $(1-\alpha)$ each time step. And if $\alpha=1$, the action value estimate is the newest reward. This is decent for nonstationary problems and usually works well.
 
 ### Ten-arm testbed reproduced:
-Here I have reproduced the 10-arm testbed from the Sutton and Barto book. I get the same results, see image below. The code is in <a href="../src/bandits/epsgr_vs_gr.py">here</a>.
+Here I have reproduced the 10-arm testbed from the Sutton and Barto book. I get the same results, see image below. The code is in <a href="./epsgr_vs_gr.py">here</a>.
 
-<img alt="Reproduced plot from 10 armed testbed from the Sutton and Barto book." src="../assets/imgs/ten-arm-testbed.png"/>
+<img alt="Reproduced plot from 10 armed testbed from the Sutton and Barto book." src="../../assets/imgs/ten-arm-testbed.png"/>
 
 
 ### Optimistic initial values:
@@ -73,9 +73,9 @@ This only encourages early stage exploration, however, so is not a remedy for no
 
 In the figure below I test the usefulness of optimistic initial action value with a greedy algorithm versus epsilon greedy with $\epsilon = 0.1$ and zero initial action value. For the optimistic action value I initialise at 5. This should be optimistic enough since my bandits sample rewards from a Gaussian with standard deviation 1 and mean sampled from a standard Gaussian.
 
-If we use sample averaging as in the previous experiment, the effect of the initial value will be stopped after the first trial of the action. In order to see a prolonged effect of the initial value, I use tracking of action values with constant learning rate of $\alpha = 0.1$ as in the example in the Sutton and Barto book. As we can see, for this problem we made the greedy algorithm explore a lot more in the early stage due to the optimistic initial values and the early stage "disappointment" from the actions. After step 200, however, we see that the greed algorithm begins to outperform the epsilon-greedy strategy in both average reward and proportion of true optimal value picked. The code for this experiment can be found <a href="../src/bandits/optimistic_init.py">here</a>.
+If we use sample averaging as in the previous experiment, the effect of the initial value will be stopped after the first trial of the action. In order to see a prolonged effect of the initial value, I use tracking of action values with constant learning rate of $\alpha = 0.1$ as in the example in the Sutton and Barto book. As we can see, for this problem we made the greedy algorithm explore a lot more in the early stage due to the optimistic initial values and the early stage "disappointment" from the actions. After step 200, however, we see that the greed algorithm begins to outperform the epsilon-greedy strategy in both average reward and proportion of true optimal value picked. The code for this experiment can be found <a href="./optimistic_init.py">here</a>.
 
-<img alt="Greedy algorithm with optimistic initial value outperforms epsilon-greedy algorithm with zero initial value." src="../assets/imgs/optimistic_init.png" />
+<img alt="Greedy algorithm with optimistic initial value outperforms epsilon-greedy algorithm with zero initial value." src="../../assets/imgs/optimistic_init.png" />
 
 
 ### Upper Confidence Bound (UCB):
@@ -106,7 +106,7 @@ $$
 
 so no generality is lost.
 
-I reproduced the plot from the Sutton and Barto book and also added the curves for UCB with $c=\sqrt{2}$ because I was curious how this would perform, given the theoretical results. It seems UCB with $c=\sqrt{2}$ indeed performs best on the 10 arm test bed as shown in the plot below. Code available <a href="../src/bandits/ucb_vs_epsgr.py">here</a>.
+I reproduced the plot from the Sutton and Barto book and also added the curves for UCB with $c=\sqrt{2}$ because I was curious how this would perform, given the theoretical results. It seems UCB with $c=\sqrt{2}$ indeed performs best on the 10 arm test bed as shown in the plot below. Code available <a href="./ucb_vs_epsgr.py">here</a>.
 
 Caveats:
 * UCB is not great for non-stationary problems since after a lot of time, the algorithm would have settled on what actions are good and will not be influenced a lot by the uncertainty term $U_t$. This 
@@ -114,7 +114,7 @@ makes the decision making dominated by being greedy on the action-value estimate
 * Implementing UCB for large state-spaces is also tough, how to you count the actions with function approximation?!
 
 
-<img src="../assets/imgs/ucb-vs-epsgr.png"/>
+<img src="../../assets/imgs/ucb-vs-epsgr.png"/>
 
 
 ### Policy Gradient Bandits:
@@ -202,18 +202,18 @@ I test four settings of the gradient bandits algorithm:
 * learning rate = 0.4, with baseline,
 * learning rate = 0.4, without baseline.
 
-Based on the plot below (code <a href="../src/bandits/pg_bandits.py">here</a>), we see that the algorithms with baselines performed much better than their counterparts without baselines. The intuition behind this is that, in the case of the without baseline the baseline is effectively 0, but since the true mean rewards for each action is sampled from $\mathcal{N}(4, 1)$, it is extremely unlikely to get rewards below 0. This results in always increasing the probability of the selected action and decreasing the probabilities of the remaining actions. This also leads to much slower/noisy learning because it is difficult to discern good actions from bad actions. On the other hand, in the case with baselines after the first action is tried, the baseline becomes equal to the reward from that action, and unless the following actions lead to better rewards, their probabilities will be decreased. Moreover, as we sample more from the best action, the baseline will tend to the mean reward of the best action, making it ulikely for suboptimal actions to increase their probability of selection.
+Based on the plot below (code <a href="./pg_bandits.py">here</a>), we see that the algorithms with baselines performed much better than their counterparts without baselines. The intuition behind this is that, in the case of the without baseline the baseline is effectively 0, but since the true mean rewards for each action is sampled from $\mathcal{N}(4, 1)$, it is extremely unlikely to get rewards below 0. This results in always increasing the probability of the selected action and decreasing the probabilities of the remaining actions. This also leads to much slower/noisy learning because it is difficult to discern good actions from bad actions. On the other hand, in the case with baselines after the first action is tried, the baseline becomes equal to the reward from that action, and unless the following actions lead to better rewards, their probabilities will be decreased. Moreover, as we sample more from the best action, the baseline will tend to the mean reward of the best action, making it ulikely for suboptimal actions to increase their probability of selection.
 
-<img src="../assets/imgs/pg-bandits.png"/>
+<img src="../../assets/imgs/pg-bandits.png"/>
 
 
 ### Comparison of all algorithms:
-Below I have created two plots (code <a href="../src/bandits/all_algos.py">here</a>)comparing greedy, epsilon greedy with $\epsilon=0.1$, UCB with $c=\sqrt{2}$, gradient bandit with $\text{lr}=0.1$ with baseline, and gradient bandit with $\text{lr}=0.1$ without baseline. The first plot has the true action values sampled from $\mathcal{N}(0, 1)$ while the second plot is an experiment where the true action values were sampled from $\mathcal{N}(4, 1)$.
+Below I have created two plots (code <a href="./all_algos.py">here</a>)comparing greedy, epsilon greedy with $\epsilon=0.1$, UCB with $c=\sqrt{2}$, gradient bandit with $\text{lr}=0.1$ with baseline, and gradient bandit with $\text{lr}=0.1$ without baseline. The first plot has the true action values sampled from $\mathcal{N}(0, 1)$ while the second plot is an experiment where the true action values were sampled from $\mathcal{N}(4, 1)$.
 
 The UCB seems to win in both settings. In the first setting both gradient bandits seem to perform slightly better than epsilon greedy in terms of average reward and both slightly worse than epsilon greedy in terms of proportion of times the true optimal action was selected. The greedy algorithm performs the worst in this experiment.
 
 A big difference in performance again arises when we change the setup to sample true action values from $\mathcal{N}(4, 1)$. Similar to the plot where we compared gradient bandits only, here the gradient bandit without baseline again did much worse. The worst performing algorithm here, however, is the greedy algorithm. The intuition for the bad performance of the greedy bandit is that due to low initial values $Q_0=0$, and the relatively higher true values $q_*(a)\sim \mathcal{N}(4, 1)$, the first action tried is likely the one the greedy algorithm gets stuck with. This is because there is no incentive to explore since it is extremely unlikely to sample negative rewards from $\mathcal{N}(m\sim\mathcal{N(4, 1)}, 1)$. So unless the first action tried is the best action, the greedy algorithm is just stuck with a suboptimal action and incurs linear regret.
 
-<img src="../assets/imgs/all-algos-0-mean.png"/>
+<img src="../../assets/imgs/all-algos-0-mean.png"/>
 
-<img src="../assets/imgs/all-algos-4-mean.png"/>
+<img src="../../assets/imgs/all-algos-4-mean.png"/>

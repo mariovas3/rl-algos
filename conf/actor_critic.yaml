@@ -14,4 +14,11 @@ ac_agent:
     n_hidden: 2
     hidden_dim: 64
   seed: 0
+  # in the case of ppo this is
+  # num_iters * steps_per_iter * num_envs
+  # 61 * 2048 * 8 = 999424
+  # I wanted to have 8 envs, I saw 1024 steps were not long enough
+  # for lunar lander so I increase to next power of two - 2048
+  # and then I picked the closest num iters 
+  # that gets me to 1e6 steps: round(1e6 / 8 / 2048) = 61
   max_time_steps: 999424

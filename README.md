@@ -11,7 +11,7 @@ Below is a gif of one evaluation episode in the Lunar Lander v2 environment usin
     * The current version is still widely supported though, as per gymnasium's docs, so I'll stick to it.
 
 List of algos:
-* <a href="./docs/bandits.md">Bandits</a>.
-* <a href="./src/n_step/README.md">N-step Q-learning</a>.
-* <a href="./src/model_based/README.md">Dyna-Q</a>.
-* <a href="./src/actor_critic/">PPO</a>.
+* <a href="./src/bandits/">Bandits</a>.
+* <a href="./src/n_step/">N-step Q-learning</a>.
+* <a href="./src/model_based/">Dyna-Q</a>.
+* <a href="./src/actor_critic/ppo">PPO</a>.

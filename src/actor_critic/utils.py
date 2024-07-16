@@ -253,3 +253,28 @@ def get_loader(
     return DataLoader(
         dataset, shuffle=True, batch_size=batch_size, drop_last=True
     )
+
+
+def eval_loop(policy, env, greedy=False, seed=0):
+    if greedy:
+        policy.greedify()
+    policy.eval()
+    torch.manual_seed(seed=seed)
+
+    obs_t, info = env.reset(seed=seed)
+    done = False
+    avg_reward = 0.0
+    ep_len = 0.0
+    ep_return = 0.0
+    with torch.no_grad():
+        while not done:
+            action = policy.sample(
+                torch.tensor(obs_t, dtype=torch.float32)
+            ).numpy()
+            obs_tp1, reward, terminated, truncated, info = env.step(action)
+            done = terminated or truncated
+            obs_t = obs_tp1
+            ep_return += reward
+            ep_len += 1
+            avg_reward = avg_reward + (reward - avg_reward) / ep_len
+    return ep_len, ep_return, avg_reward
