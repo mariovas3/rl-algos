@@ -1,20 +1,37 @@
-## PPO Tips and Tricks:
+# PPO implementation:
 
 Below is a gif of my trained PPO model:
 
-![](../../assets/gifs/eval_lunarlander_v2_greedy_ppo_mine.gif)
+![](../../../assets/gifs/eval_lunarlander_v2_greedy_ppo_mine.gif)
 
 
 Below are some wandb logs from episodic rollouts during training. The only difference between the two experiments is that in the light blue curve I have set $\lambda=0.99$ while in the grey one I have $\lambda=0.9$.
 
-<img src="../../assets/imgs/rollout_logs_ppo_lam_0.99_vs_0.9.png" alt="rollout traning logs ppo wandb"/>
+<img src="../../../assets/imgs/rollout_logs_ppo_lam_0.99_vs_0.9.png" alt="rollout traning logs ppo wandb"/>
 
 
-### Reference papers and blog posts:
+## Reference papers and blog posts:
 * <a href="https://iclr-blog-track.github.io/2022/03/25/ppo-implementation-details/">37 tricks from CleanRL</a>
 * Engstrom, Ilyas, et. al., (2020).
 * Andrychowicz, et al., (2021).
 
+## Running the experiments:
+* The configs are managed by *Hydra*. Check out the <a href="../../../conf/ac_agent/ppo_lunar_lander.yaml">ppo_lunar_lander</a> config to see what you can edit.
+* First export the python path `export PYTHONPATH=.`
+* Then login with wandb `wandb login`
+* Then set the wandb env variable to avoid some threading error `export WANDB_START_METHOD="thread"`
+* Then from the root of the repo run:
+
+    ```bash
+    python src/actor_critic/ppo/train_vanilla_ppo.py
+    ```
+* To e.g., edit the `num_iters` parameter you can do
+
+    ```bash
+    python src/actor_critic/ppo/train_vanilla_ppo.py ac_agent.num_iters=2
+    ``` 
+
+## PPO tips and tricks:
 
 I implemented my own version of PPO, without some excessive tricks such as value func clipping. I use standard mse loss on the approximated returns computed by adding the value func estimate to the advantage estimates. These returns should correspond to $TD(\lambda)$ returns under the old policy. So we are essentially doing policy eval for the old policy when training the value func. I suppose this should work well if the new policy after the grad steps is not that different from the policy setting before the grad optimisation.
 

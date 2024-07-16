@@ -1,17 +1,16 @@
 if __name__ == "__main__":
-    from pathlib import Path
-
     import gymnasium as gym
     import torch
     from stable_baselines3.common.env_util import make_vec_env
     from stable_baselines3.ppo import PPO
 
     import wandb
-    from src.actor_critic.train_vanilla_ppo import eval_loop
+    from src.actor_critic.utils import eval_loop
+    from src.metadata import metadata
 
     torch.manual_seed(0)
 
-    p = Path(__file__).absolute().parents[2] / "saved_models"
+    p = metadata.SAVED_MODELS_PATH
     p.mkdir(parents=True, exist_ok=True)
     NUM_ENVS = 8
     # the sb3 makevec env is some collection of individual
@@ -20,7 +19,7 @@ if __name__ == "__main__":
     # the seed should be the same though;
     env = make_vec_env("LunarLander-v2", n_envs=NUM_ENVS)
     config = dict(
-        num_iters=61,  # 2^7
+        num_iters=2,  # 2^7
         epochs_per_iter=10,
         steps_per_iter=2048,
         batch_size=128,

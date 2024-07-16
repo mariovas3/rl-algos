@@ -14,4 +14,4 @@ List of algos:
 * <a href="./src/bandits/">Bandits</a>.
 * <a href="./src/n_step/">N-step Q-learning</a>.
 * <a href="./src/model_based/">Dyna-Q</a>.
-* <a href="./src/actor_critic/">PPO</a>.
+* <a href="./src/actor_critic/ppo">PPO</a>.
