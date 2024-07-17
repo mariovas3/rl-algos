@@ -1,0 +1,11 @@
+defaults:
+  - dqn_config: dqn_lunar_lander
+  - _self_  # so that dqn_lunar_lander overwrites defaults;
+
+
+dqn_config:
+  mlp_config:
+    n_hidden: 2
+    hidden_dim: 64
+  seed: 0
+  max_time_steps: 1e6
