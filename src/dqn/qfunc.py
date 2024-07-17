@@ -28,7 +28,7 @@ class CosineAnnealer:
         # when curr_step == 0, coef = 1, and goes down to 0
         # as curr_step increases.
         coef = 0.5 * (
-            1 + math.cos(math.pi * (self.curr_step / self.anneal_step))
+            1 + math.cos(math.pi * (self.curr_step / self.anneal_steps))
         )
         assert 0 <= coef <= 1
         self.curr_step += 1

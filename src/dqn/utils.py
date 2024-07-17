@@ -28,7 +28,7 @@ def get_loss(Qfunc, Qtarget, discount, batch, batch_idx, do_abs_loss=False):
     ).values * (1 - batch.dones)
     preds = Qfunc.get_scores(batch.obs_t)[batch_idx, batch.actions]
     assert preds.shape == targets.shape
-    loss = nn.functional.mse_loss(preds, targets)
+    loss = nn.functional.mse_loss(preds, targets.detach())
     if do_abs_loss:
         # make the mse loss behave like absolute error loss
         # when error is outside the (-1, 1) interval
@@ -67,6 +67,7 @@ class ReplayBuffer:
         self.curr_capacity = 0
         self.batch_size = batch_size
         self.seed = 0
+        self.is_full = False
 
         self.obs_t = np.zeros((max_steps, obs_dim), dtype=np.float32)
         self.obs_tp1 = np.zeros((max_steps, obs_dim), dtype=np.float32)
@@ -104,8 +105,12 @@ class ReplayBuffer:
         env.close()
 
     def sample(self):
-        assert self.curr_capacity >= self.batch_size
-        ids = random.sample(range(self.curr_capacity), k=self.batch_size)
+        if self.is_full:
+            assert self.max_steps >= self.batch_size
+        else:
+            assert self.curr_capacity >= self.batch_size
+        curr = self.max_steps if self.is_full else self.curr_capacity
+        ids = random.sample(range(curr), k=self.batch_size)
         return Batch(
             torch.from_numpy(self.obs_t[ids]),
             torch.from_numpy(self.actions[ids]),
@@ -140,3 +145,5 @@ class ReplayBuffer:
             self.obs_tp1[:remaining_to_add] = obs_tp1[forward_add:]
             self.dones[:remaining_to_add] = dones[forward_add:]
         self.curr_capacity = (self.curr_capacity + num_to_add) % self.max_steps
+        if curr > self.curr_capacity:
+            self.is_full = True

@@ -1,4 +1,5 @@
 import math
+import random
 import time
 from copy import deepcopy
 
@@ -29,6 +30,8 @@ def train_loop(
     seed=None,
     max_grad_norm=None,
     do_abs_loss=False,
+    log_training_every_n_grad_step=50,
+    grad_step_freq=10,
 ):
     assert isinstance(env.unwrapped, VectorEnv)
     num_envs = env.num_envs
@@ -45,34 +48,56 @@ def train_loop(
         done = truncated + terminated
         # add experience to replay buffer;
         replay_buffer.add_experience(obs_t, action, reward, obs_tp1, done)
-        # sample data from buffer;
-        batch = replay_buffer.sample()
-        # zero grad;
-        Qfunc_optim.zero_grad()
-        # get loss;
-        loss = utils.get_loss(
-            Qfunc=Qfunc,
-            Qtarget=Qtarget,
-            discount=discount,
-            batch=batch,
-            batch_idx=batch_idx,
-            do_abs_loss=do_abs_loss,
-        )
-        # get grads;
-        loss.backward()
+        # update state;
+        obs_t = obs_tp1
 
-        # see if should clip grads;
-        if max_grad_norm is None:
-            norm = utils.get_grad_norm(Qfunc)
-        else:
-            norm = nn.utils.clip_grad_norm_(
-                Qfunc.parameters(),
-                max_norm=max_grad_norm,
-                norm_type=2,
-                error_if_nonfinite=True,
+        # see if should do grad step;
+        if (_ + 1) % grad_step_freq == 0:
+            # sample data from buffer;
+            batch = replay_buffer.sample()
+            # zero grad;
+            Qfunc_optim.zero_grad()
+            # get loss;
+            loss = utils.get_loss(
+                Qfunc=Qfunc,
+                Qtarget=Qtarget,
+                discount=discount,
+                batch=batch,
+                batch_idx=batch_idx,
+                do_abs_loss=do_abs_loss,
             )
-        # grad step;
-        Qfunc_optim.step()
+            # get grads;
+            loss.backward()
+
+            # see if should clip grads;
+            if max_grad_norm is None:
+                norm = utils.get_grad_norm(Qfunc)
+            else:
+                norm = nn.utils.clip_grad_norm_(
+                    Qfunc.parameters(),
+                    max_norm=max_grad_norm,
+                    norm_type=2,
+                    error_if_nonfinite=True,
+                )
+            # grad step;
+            Qfunc_optim.step()
+
+            num_grad_steps_done = (_ + 1) // grad_step_freq
+            # see if should log training metrics;
+            if num_grad_steps_done % log_training_every_n_grad_step == 0:
+                wandb.log(
+                    {
+                        "training/qfunc_loss": loss.item(),
+                        "training/grad_norm": norm.item(),
+                        "training/epsilon": Qfunc.eps,
+                    }
+                )
+            # anneal epsilon every grad step;
+            Qfunc.anneal_epsilon()
+
+            # check if Qtarget needs to get updated;
+            if num_grad_steps_done % update_target_every_n_grad_steps == 0:
+                utils.copy_first_to_second(Qfunc, Qtarget)
 
         # do some reward logging;
         if "episode" in info and hasattr(env, "length_queue"):
@@ -87,24 +112,9 @@ def train_loop(
                     {
                         f"rollout/len_{maxlen}_ma": avg_len,
                         f"rollout/returns_{maxlen}_ma": avg_return,
-                        f"rollout/reward_{maxlen}_ma": avg_reward,
+                        f"rollout/avg_reward_{maxlen}_ma": avg_reward,
                     }
                 )
-        # log training metrics;
-        wandb.log(
-            {
-                "training/qfunc_loss": loss.item(),
-                "training/grad_norm": norm.item(),
-            }
-        )
-        # Anneal epsilon each grad step;
-        Qfunc.anneal_epsilon()
-        # check if Qtarget needs to get updated;
-        if (_ + 1) % update_target_every_n_grad_steps == 0:
-            utils.copy_first_to_second(Qfunc, Qtarget)
-
-        # update state;
-        obs_t, obs_tp1
 
 
 @hydra.main(
@@ -122,6 +132,9 @@ def main(config: DictConfig):
 
     # set seed;
     torch.manual_seed(config["dqn_config"]["seed"])
+    np.random.seed(config["dqn_config"]["seed"])
+    random.seed(config["dqn_config"]["seed"])
+
     p = metadata.SAVED_MODELS_PATH / f"my_dqn_{time.time()}"
     p.mkdir(parents=True, exist_ok=True)
 
@@ -206,6 +219,10 @@ def main(config: DictConfig):
         seed=config["dqn_config"]["seed"],
         max_grad_norm=config["dqn_config"]["max_grad_norm"],
         do_abs_loss=config["dqn_config"]["do_abs_loss"],
+        log_training_every_n_grad_step=config["dqn_config"][
+            "log_training_every_n_grad_step"
+        ],
+        grad_step_freq=config["dqn_config"]["grad_step_freq"],
     )
     env.close()
     wandb.finish()
@@ -232,7 +249,7 @@ def main(config: DictConfig):
     )
 
     ep_len, ep_return, avg_reward = eval_loop(
-        policy=Qfunc, env=env, greedy=False, seed=0
+        policy=Qfunc, env=env, greedy=True, seed=0
     )
     env.close()
     print(
