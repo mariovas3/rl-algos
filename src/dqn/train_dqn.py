@@ -204,7 +204,7 @@ def main(config: DictConfig):
         project="rl-algos", name="dqn-local-run", config=config["dqn_config"]
     )
 
-    print(f"TRAINING FOR {tot_steps} STEPS...\n\n")
+    print(f"TRAINING FOR {tot_steps} ENV STEPS...\n\n")
     train_loop(
         num_iters=config["dqn_config"]["num_iters"],
         env=env,

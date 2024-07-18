@@ -68,6 +68,7 @@ class ReplayBuffer:
         self.batch_size = batch_size
         self.seed = 0
         self.is_full = False
+        self.idxs = list(range(self.max_steps))
 
         self.obs_t = np.zeros((max_steps, obs_dim), dtype=np.float32)
         self.obs_tp1 = np.zeros((max_steps, obs_dim), dtype=np.float32)
@@ -109,8 +110,8 @@ class ReplayBuffer:
             assert self.max_steps >= self.batch_size
         else:
             assert self.curr_capacity >= self.batch_size
-        curr = self.max_steps if self.is_full else self.curr_capacity
-        ids = random.sample(range(curr), k=self.batch_size)
+        idxs = self.idxs if self.is_full else self.idxs[: self.curr_capacity]
+        ids = random.sample(idxs, k=self.batch_size)
         return Batch(
             torch.from_numpy(self.obs_t[ids]),
             torch.from_numpy(self.actions[ids]),

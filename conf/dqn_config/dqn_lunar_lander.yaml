@@ -2,7 +2,7 @@ seed: 0
 num_iters: 62500
 num_envs: 8
 env_name: LunarLander-v2
-log_training_every_n_grad_step: 1
+log_training_every_n_grad_step: 25
 grad_step_freq: 1
 
 # replay buffer config;
@@ -18,7 +18,7 @@ max_eps: 1
 min_eps: 0.1
 # recommended is num_iters / grad_step_freq / 2
 # since annealing done every grad step
-anneal_steps: 50000
+anneal_steps: 30000
 
 # Qfunc config;
 update_target_every_n_grad_steps: 500
