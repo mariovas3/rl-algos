@@ -1,4 +1,3 @@
-import json
 import math
 import random
 import time
@@ -150,7 +149,7 @@ def main(config: DictConfig):
         obs_dim=obs_dim,
         action_dim=None,
         batch_size=config["dqn_config"]["batch_size"],
-        seed=0,
+        seed=config["dqn_config"]["seed"],
     )
     replay_buffer.collect_uniform_experience(
         num_steps=config["dqn_config"]["uniform_experience"], env=env

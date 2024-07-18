@@ -8,8 +8,6 @@ from gymnasium.vector import VectorEnv
 from torch import nn
 from tqdm import tqdm
 
-import wandb
-
 
 def copy_first_to_second(first: nn.Module, second: nn.Module):
     p = nn.utils.parameters_to_vector(first.parameters())
@@ -66,7 +64,7 @@ class ReplayBuffer:
         self.max_steps = max_steps
         self.curr_capacity = 0
         self.batch_size = batch_size
-        self.seed = 0
+        self.seed = seed
         self.is_full = False
         self.idxs = list(range(self.max_steps))
 
