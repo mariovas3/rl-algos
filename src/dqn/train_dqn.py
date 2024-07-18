@@ -1,3 +1,4 @@
+import json
 import math
 import random
 import time
@@ -12,6 +13,7 @@ from omegaconf import DictConfig, OmegaConf
 from torch import nn
 from tqdm import tqdm
 
+import src.general_utils.data as dutils
 import wandb
 from src.actor_critic.utils import eval_loop
 from src.dqn import qfunc, utils
@@ -254,6 +256,16 @@ def main(config: DictConfig):
     env.close()
     print(
         f"ep_len: {ep_len}\nep_return: {ep_return}\navg_reward: {avg_reward}"
+    )
+
+    dutils.save_to_json(
+        {
+            "episode_len": ep_len,
+            "episode_return": ep_return,
+            "average_reward": avg_reward,
+        },
+        p / "eval_metrics.json",
+        indent=2,
     )
 
 

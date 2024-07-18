@@ -28,14 +28,14 @@ def get_loss(Qfunc, Qtarget, discount, batch, batch_idx, do_abs_loss=False):
     ).values * (1 - batch.dones)
     preds = Qfunc.get_scores(batch.obs_t)[batch_idx, batch.actions]
     assert preds.shape == targets.shape
-    loss = nn.functional.mse_loss(preds, targets.detach())
+
     if do_abs_loss:
         # make the mse loss behave like absolute error loss
         # when error is outside the (-1, 1) interval
         # this was used in the paper; the idea is that
         # for abs loss, derivative(|x|) = sign(x) if x != 0
-        return torch.clip(loss, min=-1, max=1)
-    return loss
+        return nn.functional.smooth_l1_loss(preds, targets.detach(), beta=1.0)
+    return nn.functional.mse_loss(preds, targets.detach())
 
 
 def get_grad_norm(net):

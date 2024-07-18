@@ -10,6 +10,7 @@ from gymnasium.vector import VectorEnv
 from omegaconf import DictConfig, OmegaConf
 from torch import nn
 
+import src.general_utils.data as dutils
 import wandb
 from src.actor_critic.policy import MLP, DiscretePolicy, ortho_init_
 from src.actor_critic.utils import (
@@ -275,6 +276,16 @@ def main(config: DictConfig):
     env.close()
     print(
         f"ep_len: {ep_len}\nep_return: {ep_return}\navg_reward: {avg_reward}"
+    )
+
+    dutils.save_to_json(
+        {
+            "episode_len": ep_len,
+            "episode_return": ep_return,
+            "average_reward": avg_reward,
+        },
+        p / "eval_metrics.json",
+        indent=2,
     )
 
 
