@@ -144,6 +144,10 @@ def main(config: DictConfig):
     num_envs = config["dqn_config"]["num_envs"]
     env = gym.vector.make(config["dqn_config"]["env_name"], num_envs=num_envs)
     obs_dim = math.prod(env.unwrapped.single_observation_space.shape)
+    # high is exclusive;
+    uniform_agent = utils.DiscreteUniformAgent(
+        out_shape=env.action_space.shape, low=0, high=env.single_action_space.n
+    )
     replay_buffer = utils.ReplayBuffer(
         config["dqn_config"]["buffer_capacity"],
         obs_dim=obs_dim,
@@ -152,7 +156,9 @@ def main(config: DictConfig):
         seed=config["dqn_config"]["seed"],
     )
     replay_buffer.collect_uniform_experience(
-        num_steps=config["dqn_config"]["uniform_experience"], env=env
+        num_steps=config["dqn_config"]["uniform_experience"],
+        env=env,
+        uniform_agent=uniform_agent,
     )
     # close dummy env;
     env.close()

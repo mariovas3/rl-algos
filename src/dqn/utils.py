@@ -83,14 +83,22 @@ class ReplayBuffer:
         self.rewards = np.zeros((max_steps,), dtype=np.float32)
         self.dones = np.zeros((max_steps,), dtype=np.int32)
 
-    def collect_uniform_experience(self, num_steps, env: VectorEnv):
+    def collect_uniform_experience(
+        self, num_steps, env: VectorEnv, uniform_agent
+    ):
         num_envs = env.unwrapped.num_envs
         num_iters = round(num_steps // num_envs)
         tot_steps = num_envs * num_iters
         print(f"COLLECTING {tot_steps} STEPS FROM UNIFORM POLICY...")
         obs_t, info = env.reset(seed=self.seed)
         for _ in tqdm(range(num_iters)):
-            action = env.action_space.sample()
+            # as of time of writing, env.action_space.sample()
+            # is not controlled by the seed of env and can give
+            # different actions despite passing the same seed
+            # to the env; This was pretty difficult to debug
+            # when you trust gymnasium and your algorithm
+            # is correct and learns but can't be reproduced
+            action = uniform_agent.sample()
             obs_tp1, reward, truncated, terminated, info = env.step(action)
             dones = truncated + terminated
             self.add_experience(
@@ -146,3 +154,14 @@ class ReplayBuffer:
         self.curr_capacity = (self.curr_capacity + num_to_add) % self.max_steps
         if curr > self.curr_capacity:
             self.is_full = True
+
+
+class DiscreteUniformAgent:
+    def __init__(self, out_shape, low, high):
+        self.out_shape = out_shape
+        self.low, self.high = low, high
+
+    def sample(self):
+        return np.random.randint(
+            low=self.low, high=self.high, size=self.out_shape
+        )
