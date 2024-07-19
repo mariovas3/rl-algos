@@ -73,6 +73,10 @@ I will benchmark my implementation on the `LunarLander-v2` env because I am fami
         python src/dqn/train_dqn.py dqn_config.env_name=CartPole-v1 dqn_config.buffer_capacity=10000 dqn_config.uniform_experience=5000 dqn_config.num_iters=62500
         ```
     * More info: CleanRL also uses `5x10^5` env steps and `10^4` buffer capacity.
+    * Wandb results - 100-episode moving average for episode lengths, episode returns and average returns during training:
+
+        <img src="../../assets/imgs/dqn/dqn_rollouts_ma_CartPole-v1.png">
+
 * `LunarLander-v2` greedy policy:
     * Episode length: `312`
     * Episode return: `280.79`
@@ -81,6 +85,9 @@ I will benchmark my implementation on the `LunarLander-v2` env because I am fami
         ```bash
         python src/dqn/train_dqn.py
         ```
+    * Wandb results - 100-episode moving average for episode lengths, episode returns and average returns during training:
+
+        <img src="../../assets/imgs/dqn/dqn_rollouts_ma_LunarLander-v2.png"/>
 
 ## Running the code;
 * Install the stuff from `requirements.txt` to a Python 3.11.9 env (e.g., conda).
