@@ -15,10 +15,10 @@ uniform_experience: 10000
 # annealer config;
 annealer: linear
 max_eps: 1
-min_eps: 0.1
+min_eps: 0.05
 # recommended is num_iters / grad_step_freq / 2
 # since annealing done every grad step
-anneal_steps: 30000
+anneal_steps: 20000
 
 # Qfunc config;
 update_target_every_n_grad_steps: 500
@@ -27,6 +27,6 @@ mlp_config:
     hidden_dim: 64
 discount: 0.99
 lr: 3e-4
-max_grad_norm: 1
+max_grad_norm: 10
 ortho_init: true
 do_abs_loss: true
