@@ -59,14 +59,28 @@
 ## Benchmarks:
 
 * The original paper tests their code on Atari games. This repo focuses more on the RL algos themselves, so will avoid envs that require a lot of tricks in processing. For more details, read the tricks the original paper has used.
-* I will be benchmarking my implementation vs the results from <a href="https://docs.cleanrl.dev/rl-algorithms/dqn/#experiment-results_1">CleanRL</a>.
 
-```
-Avg episodic returns in CleanRL:
-CartPole-v1	488.69 ± 16.11
-Acrobot-v1	-91.54 ± 7.20
-MountainCar-v0	-194.95 ± 8.48
-```
+I will benchmark my implementation on the `LunarLander-v2` env because I am familiar with it from previous projects, and `CartPole-v1` because CleanRL also use it.
+
+## My results:
+* I tuned hyperparameters based on the `LunarLander-v2` environment, since I am familiar with it from my implementation of PPO.
+* `CartPole-v1` greedy policy:
+    * Episode length: `500`
+    * Episode return: `500`
+    * Num env steps of training: `5x10^5`
+    * Command:
+        ```bash
+        python src/dqn/train_dqn.py dqn_config.env_name=CartPole-v1 dqn_config.buffer_capacity=10000 dqn_config.uniform_experience=5000 dqn_config.num_iters=62500
+        ```
+    * More info: CleanRL also uses `5x10^5` env steps and `10^4` buffer capacity.
+* `LunarLander-v2` greedy policy:
+    * Episode length: `312`
+    * Episode return: `280.79`
+    * Num env steps of training: `10^6`
+    * Command:
+        ```bash
+        python src/dqn/train_dqn.py
+        ```
 
 ## Running the code;
 * Install the stuff from `requirements.txt` to a Python 3.11.9 env (e.g., conda).
@@ -89,6 +103,12 @@ MountainCar-v0	-194.95 ± 8.48
     this will pick up the config from `ROOT/conf`. To modify the config, just extend the above command by adding e.g., `dqn_config.buffer_capacity=20000`. Similarly you can modify other config options.
 
 * The `do_abs_loss` will use `SmoothL1Loss` as described <a href="https://pytorch.org/docs/stable/generated/torch.nn.SmoothL1Loss.html#smoothl1loss">here</a>. Otherwise, `MSELoss` is used.
+
+* Some learnings:
+    * In my experience, it is somewhat difficult to tune the replay buffer capacity. Too much capacity, and you may be retaining bad experience for too long. Too little capacity, and you may not have diverse enough experience - requiring greater exploration rate of the algorithm. 
+    * There is also an interplay between buffer capacity and gradient step frequency. Holding grad step frequency constant, you want to quickly reduce your prob of sampling bad experience from the buffer, so want a small buffer capacity.
+    * Compared to PPO where at each iter you sample experience according to the old policy and then train for several epochs on that data (relatively fresh data), I found tuning buffer capacity more difficult since it can possibly include experience from way back in time when the agent was still weak.
+    * SAC also uses a replay buffer and is also not easy to tune the buffer capacity. That's why PPO in my experience has proved relatively robust compared to replay-buffer-based techniques. The data in PPO are always sampled anew at each iter, making them relatively fresh.
 
 ### Bug in `env.action_space.sample` from `gymnasium==0.29.1` and `box2d-py==2.3.5`:
 
