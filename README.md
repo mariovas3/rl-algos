@@ -15,3 +15,4 @@ List of algos:
 * <a href="./src/n_step/">N-step Q-learning</a>.
 * <a href="./src/model_based/">Dyna-Q</a>.
 * <a href="./src/actor_critic/ppo">PPO</a>.
+* <a href="./src/dqn">DQN</a>.
