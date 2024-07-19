@@ -1,5 +1,61 @@
 # DQN based on the <a href="https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf">paper</a> by Mnih et. al.
 
+## Install details:
+* I used a miniconda Python 3.11.9 environment.
+* First install `torch` cpu version:
+
+    ```
+    pip install torch==2.3.1 torchvision==0.18.1 --index-url https://download.pytorch.org/whl/cpu
+    ```
+
+* Next install `ffmpeg`
+
+    ```
+    sudo apt-get install ffmpeg
+    ```
+
+* Clean the `requirements.txt` file by removing the `torch` and `box` entries and save in `requirements2.txt`:
+
+    ```
+    sed 's/(.*torch.*|.*box.*)//' -E requirements.txt > requirements2.txt
+    ```
+
+* Install the requirements:
+
+    ```
+    pip install -r requirements2.txt
+    ```
+
+* Install the `gymnasium[box2d]` stuff:
+
+    ```
+    pip install gymnasium[box2d]
+    ```
+    
+    the above command works for `bash`, `zsh` might need some quotation marks. I use `bash`.
+
+* If you don't execute the above instructions successfully, you might get some weird errors.
+    * I used to get some weird errors on lightning studio:
+
+        ```
+        ...
+        
+        File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.11/site-packages/moviepy/video/io/ffmpeg_writer.py", line 213, in ffmpeg_write_video
+            with FFMPEG_VideoWriter(filename, clip.size, fps, codec = codec,
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/home/zeus/miniconda3/envs/cloudspace/lib/python3.11/site-packages/moviepy/video/io/ffmpeg_writer.py", line 88, in __init__
+            '-r', '%.02f' % fps,
+                ~~~~~~~~^~~~~
+            TypeError: must be real number, not NoneType
+        ```
+
+        It's some bs that has to do with `moviepy` and `ffmpeg`. I fixed it by
+        
+        ```
+        pip uninstall moviepy decorator
+        pip install moviepy
+        ```
+
 ## Benchmarks:
 
 * The original paper tests their code on Atari games. This repo focuses more on the RL algos themselves, so will avoid envs that require a lot of tricks in processing. For more details, read the tricks the original paper has used.
