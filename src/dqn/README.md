@@ -88,6 +88,8 @@ MountainCar-v0	-194.95 ± 8.48
 
     this will pick up the config from `ROOT/conf`. To modify the config, just extend the above command by adding e.g., `dqn_config.buffer_capacity=20000`. Similarly you can modify other config options.
 
+* The `do_abs_loss` will use `SmoothL1Loss` as described <a href="https://pytorch.org/docs/stable/generated/torch.nn.SmoothL1Loss.html#smoothl1loss">here</a>. Otherwise, `MSELoss` is used.
+
 ### Bug in `env.action_space.sample` from `gymnasium==0.29.1` and `box2d-py==2.3.5`:
 
 Seems it is not controlled by the seed of the env or `torch.manual_seed` or `np.random.seed` or `random.seed`. can be checked by the following:
