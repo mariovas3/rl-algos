@@ -2,7 +2,7 @@ if __name__ == "__main__":
     import gymnasium as gym
     import torch
     from stable_baselines3.common.env_util import make_vec_env
-    from stable_baselines3.ppo import PPO
+    from stable_baselines3.dqn import DQN
 
     import src.general_utils.data as dutils
     import wandb
@@ -20,18 +20,25 @@ if __name__ == "__main__":
     # the seed should be the same though;
     env = make_vec_env("LunarLander-v2", n_envs=NUM_ENVS)
     config = dict(
-        num_iters=2,  # 2^7
-        epochs_per_iter=10,
-        steps_per_iter=2048,
+        learning_rate=3e-4,
+        buffer_size=10000,
+        learning_starts=10000,
         batch_size=128,
-        seed=0,
-        discount=0.99,
-        lam=0.99,
-        eps=0.2,
-        lr=3e-4,
+        tau=1,
+        gamma=0.99,
+        train_freq=1,
+        gradient_steps=1,
+        target_update_interval=500,
+        num_iters=62500,
         num_envs=NUM_ENVS,
+        exploration_fraction=30000 / 62500,
+        exploration_initial_eps=1,
+        exploration_final_eps=0.1,
+        max_grad_norm=1,
+        stats_window_size=100,
+        seed=0,
     )
-    run = wandb.init(project="rl-algos", name="ppo-sb3-run", config=config)
+    run = wandb.init(project="rl-algos", name="dqn-sb3-run", config=config)
 
     class Logger:
         def record(self, name, val, **kwargs):
@@ -41,33 +48,31 @@ if __name__ == "__main__":
             pass
 
     logger = Logger()
-    model = PPO(
+    model = DQN(
         policy="MlpPolicy",
         env=env,
-        learning_rate=config["lr"],
-        n_steps=config["steps_per_iter"],
-        batch_size=config["batch_size"],
-        n_epochs=config["epochs_per_iter"],
-        gamma=config["discount"],
-        gae_lambda=config["lam"],
-        clip_range=config["eps"],
-        clip_range_vf=None,
-        normalize_advantage=True,
-        ent_coef=0,
-        vf_coef=1,
-        max_grad_norm=0.5,
+        learning_rate=3e-4,
+        buffer_size=10000,
+        learning_starts=10000,
+        batch_size=128,
+        tau=1,
+        gamma=0.99,
+        train_freq=1,
+        gradient_steps=1,
+        target_update_interval=500,
+        exploration_fraction=30000 / 62500,
+        exploration_initial_eps=1,
+        exploration_final_eps=0.1,
+        max_grad_norm=1,
+        stats_window_size=100,
         seed=0,
     )
     model.set_logger(logger=logger)
     print(
-        f"Training for {config['num_iters'] * config['num_envs'] * config['steps_per_iter']} steps...\n\n"
+        f"Training for {config['num_iters'] * config['num_envs']} steps...\n\n"
     )
-    model.learn(
-        total_timesteps=config["num_iters"]
-        * config["steps_per_iter"]
-        * config["num_envs"]
-    )
-    model.save(p / "sb3_ppo_lunar_lander_v2")
+    model.learn(total_timesteps=config["num_iters"] * config["num_envs"])
+    model.save(p / "sb3_dqn_lunar_lander_v2")
 
     env.close()
     wandb.finish()

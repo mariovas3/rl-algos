@@ -1,5 +1,6 @@
 import math
 
+import torch
 import torch.distributions as dists
 from torch import nn
 
@@ -104,14 +105,51 @@ class DiscretePolicy(nn.Module):
         out = self.net(state)
         return dists.Categorical(logits=out)
 
+    def get_scores(self, state):
+        return self.net(state)
+
     def log_prob(self, action, state):
         d = self(state)
         return d.log_prob(action)
 
     def sample(self, state):
+        """Sample action."""
         if self.deterministic:
             return self.net(state).argmax(-1)
         return self(state).sample()
+
+
+class EpsGreedyDiscrete(DiscretePolicy):
+    def __init__(self, eps, **kwargs):
+        super().__init__(**kwargs)
+        self.eps = eps
+
+    def sample(self, state):
+        """Sample action."""
+        out = self.net(state)
+        if self.deterministic:
+            return out.argmax(-1)
+        # get the greatest score;
+        greedy_val = out.max(-1, keepdims=True).values
+        # sample one among the greedy actions;
+        greedy_samples = dists.Categorical(probs=out == greedy_val).sample()
+
+        if state.ndim == 1:
+            size = 1
+        else:
+            assert state.ndim > 0
+            size = len(state)
+
+        # sample random actions;
+        randoms = torch.randint(low=0, high=self.num_actions, size=(size,))
+        # explore w.p. eps;
+        explore = (torch.rand(size=(size,)) <= self.eps).int()
+        action = randoms * explore + greedy_samples * (1 - explore)
+        return action.squeeze()
+
+    def log_prob(self):
+        # no need for log prob for now;
+        raise NotImplementedError
 
 
 def ortho_init_(net, hidden_gain, out_layer_gain):
