@@ -1,6 +1,6 @@
 # DQN based on the <a href="https://www.cs.toronto.edu/~vmnih/docs/dqn.pdf">paper</a> by Mnih et. al.
 
-## Install details:
+## Installation details:
 * I used a miniconda Python 3.11.9 environment.
 * First install `torch` cpu version:
 
@@ -62,6 +62,12 @@
 
 I will benchmark my implementation on the `LunarLander-v2` env because I am familiar with it from previous projects, and `CartPole-v1` because CleanRL also use it.
 
+You can also run the `stablebaselines3` DQN by:
+
+```bash
+python src/dqn/dqn_sb3_benchmark.py
+```
+
 ## My results:
 * I tuned hyperparameters based on the `LunarLander-v2` environment, since I am familiar with it from my implementation of PPO.
 * `CartPole-v1` greedy policy:
@@ -88,6 +94,9 @@ I will benchmark my implementation on the `LunarLander-v2` env because I am fami
     * Wandb results - 100-episode moving average for episode lengths, episode returns and average returns during training:
 
         <img src="../../assets/imgs/dqn/dqn_rollouts_ma_LunarLander-v2.png"/>
+    * The `sb3` dqn with the same config achieved `254` episodic return and `343` episode length with the same config (although not greedy eval since not sure how to access it in `sb3`).
+    * It is worth noting that while my implementation ran in `7m 43s`, the `sb3` implementation ran in `29m 48s` on the same hardware. I also observed `sb3` ran slower in my earlier PPO implementation, but this looks like a much larger difference here.
+    * While my model achieved 100-episodic-return-moving-average of `237.539` during training, the `sb3` baseline achieved `175.606`.
 
 ## Running the code;
 * Install the stuff from `requirements.txt` to a Python 3.11.9 env (e.g., conda).
